@@ -7,6 +7,82 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Usuários do sistema (Autenticação)
 model User {
-  id String @id @default(uuid())
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("ADMIN") // ADMIN, RECEPTIONIST, CLINICIAN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Pacientes da clínica
+model Patient {
+  id          String             @id @default(uuid())
+  name        String
+  phone       String
+  email       String?
+  birthDate   DateTime?
+  cpf         String?            @unique
+  address     String?
+  
+  // Ficha de anamnese (histórico de saúde, alergias, remédios, etc)
+  anamnesis   Json?              
+  
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  evaluations Evaluation[]
+  quotes      Quote[]
+  procedures  PatientProcedure[]
+}
+
+// Catálogo de procedimentos estéticos
+model Procedure {
+  id                String             @id @default(uuid())
+  name              String
+  recommendedMonths Int                // Intervalo recomendado para retorno (ex: 6 meses p/ botox)
+  
+  patientProcedures PatientProcedure[]
+}
+
+// Procedimentos realizados no paciente
+model PatientProcedure {
+  id           String    @id @default(uuid())
+  patientId    String
+  procedureId  String
+  performedAt  DateTime
+  nextReturnAt DateTime
+  notified     Boolean   @default(false)
+
+  patient   Patient   @relation(fields: [patientId], references: [id])
+  procedure Procedure @relation(fields: [procedureId], references: [id])
+}
+
+// Avaliações / Sessões
+model Evaluation {
+  id           String   @id @default(uuid())
+  patientId    String
+  title        String?  // Ex: "Avaliação inicial", "Retorno Botox"
+  notes        String
+  beforePhotos String[] // Como você usa PostgreSQL, podemos salvar várias fotos em lista
+  afterPhotos  String[] 
+  createdAt    DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
+}
+
+// Orçamentos
+model Quote {
+  id         String   @id @default(uuid())
+  patientId  String
+  totalValue Decimal
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  details    Json     // Itens do orçamento flexíveis (procedimento, quantidade, valor)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id])
 }
