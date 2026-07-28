@@ -1,6 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  format,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addDays,
+  subDays,
+  isBefore,
+  startOfDay,
+} from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { NewAppointmentModal } from './NewAppointmentModal';
+import { AppointmentDetailsModal } from './AppointmentDetailsModal';
 
 interface Appointment {
   id: string;
@@ -10,9 +29,10 @@ interface Appointment {
   durationMinutes: number;
   status: 'SCHEDULED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   phone: string;
+  date: string;
 }
 
-const mockAppointments: Appointment[] = [
+const initialAppointments: Appointment[] = [
   {
     id: '1',
     patientName: 'Maria Silva',
@@ -21,24 +41,17 @@ const mockAppointments: Appointment[] = [
     durationMinutes: 60,
     status: 'CONFIRMED',
     phone: '11999999999',
+    date: '2026-07-28',
   },
   {
     id: '2',
-    patientName: 'Ana Beatriz',
-    procedure: 'Preenchimento Labial',
-    startTime: '10:30',
-    durationMinutes: 90,
-    status: 'IN_PROGRESS',
-    phone: '11988888888',
-  },
-  {
-    id: '3',
     patientName: 'Carla Dias',
     procedure: 'Limpeza de Pele Profunda',
     startTime: '14:00',
     durationMinutes: 60,
     status: 'SCHEDULED',
     phone: '11977777777',
+    date: '2026-07-28',
   },
 ];
 
@@ -60,21 +73,51 @@ const statusBadge = {
 
 const timeSlots = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
-const weekDays = [
-  { name: 'Dom', date: '26/07' },
-  { name: 'Seg', date: '27/07' },
-  { name: 'Ter', date: '28/07', isToday: true },
-  { name: 'Qua', date: '29/07' },
-  { name: 'Qui', date: '30/07' },
-  { name: 'Sex', date: '31/07' },
-  { name: 'Sáb', date: '01/08' },
-];
-
-export default function AgendaPage() {
+export function AgendaPage() {
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('month');
-  const [selectedDate, setSelectedDate] = useState('2026-07-28');
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 28));
+  const [appointments] = useState<Appointment[]>(initialAppointments);
+
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+
+  const today = startOfDay(new Date());
+
+  const handlePrevious = () => {
+    if (viewMode === 'month') setCurrentDate(subMonths(currentDate, 1));
+    else if (viewMode === 'week') setCurrentDate(subDays(currentDate, 7));
+    else setCurrentDate(subDays(currentDate, 1));
+  };
+
+  const handleNext = () => {
+    if (viewMode === 'month') setCurrentDate(addMonths(currentDate, 1));
+    else if (viewMode === 'week') setCurrentDate(addDays(currentDate, 7));
+    else setCurrentDate(addDays(currentDate, 1));
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(monthStart);
+  const monthDays = eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(monthEnd) });
+
+  const weekStart = startOfWeek(currentDate);
+  const weekEnd = endOfWeek(currentDate);
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const formattedSelectedDate = format(currentDate, 'yyyy-MM-dd');
+
+  const getHeaderTitle = () => {
+    if (viewMode === 'day') {
+      return format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR });
+    }
+    if (viewMode === 'week') {
+      return `${format(weekStart, "d 'de' MMM", { locale: ptBR })} - ${format(weekEnd, "d 'de' MMM 'de' yyyy", { locale: ptBR })}`;
+    }
+    return format(currentDate, "MMMM 'de' yyyy", { locale: ptBR });
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-112px)] gap-4">
@@ -86,29 +129,46 @@ export default function AgendaPage() {
 
         <button
           onClick={() => setIsNewAppointmentOpen(true)}
-          className="h-10 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-medium text-sm rounded-xl transition shadow-sm flex items-center gap-2"
+          className="h-10 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-medium text-sm rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
         >
           <span>+</span> Novo Agendamento
         </button>
       </div>
 
       <div className="bg-white p-2.5 px-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4 shrink-0">
-        {/* Seleção de Data & Toggle Integrado */}
         <div className="flex items-center gap-3">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-9 px-3 bg-slate-100 text-slate-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-600 border border-transparent font-medium"
-          />
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={handlePrevious}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 transition font-bold text-xs cursor-pointer"
+            >
+              ◀
+            </button>
+            <button
+              onClick={handleToday}
+              className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-white rounded-lg transition cursor-pointer"
+            >
+              Hoje
+            </button>
+            <button
+              onClick={handleNext}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 transition font-bold text-xs cursor-pointer"
+            >
+              ▶
+            </button>
+          </div>
+
+          <span className="text-sm font-bold text-slate-800 capitalize">
+            {getHeaderTitle()}
+          </span>
 
           <div className="h-5 w-px bg-slate-200 hidden sm:block" />
 
-          {/* Toggle de Visão Integrado e Discreto */}
+          {/* Toggle de Visão */}
           <div className="bg-slate-100 p-1 rounded-xl flex gap-0.5 text-xs font-medium text-slate-600">
             <button
               onClick={() => setViewMode('day')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'day' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:text-slate-900'
               }`}
             >
@@ -116,7 +176,7 @@ export default function AgendaPage() {
             </button>
             <button
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'week' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:text-slate-900'
               }`}
             >
@@ -124,7 +184,7 @@ export default function AgendaPage() {
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1 rounded-lg transition-all ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'month' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:text-slate-900'
               }`}
             >
@@ -133,7 +193,7 @@ export default function AgendaPage() {
           </div>
         </div>
 
-        {/* Status */}
+        {/* Legenda de Status */}
         <div className="hidden md:flex items-center gap-4 text-xs font-medium text-slate-600">
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Agendado</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Confirmado</span>
@@ -141,17 +201,21 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* 3. Área do Calendário */}
+      {/* Área do Calendário */}
       <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col p-3">
         
-        {/* DIA */}
+        {/* --- DIA --- */}
         {viewMode === 'day' && (
-          <div className="flex-1 grid grid-rows-9 divide-y divide-slate-100 h-full">
+          <div className="flex-1 grid grid-rows-9 divide-y divide-slate-100 h-full overflow-y-auto">
             {timeSlots.map((time) => {
-              const appointment = mockAppointments.find((app) => app.startTime === time);
+              const appointment = appointments.find(
+                (app) => app.date === formattedSelectedDate && app.startTime === time
+              );
+
+              const isPastDate = isBefore(startOfDay(currentDate), today);
 
               return (
-                <div key={time} className="flex items-center gap-3 px-2 group hover:bg-slate-50/60 transition">
+                <div key={time} className="flex items-center gap-3 px-2 group hover:bg-slate-50/60 transition min-h-[50px]">
                   <span className="w-14 text-xs font-semibold text-slate-400 text-center shrink-0">
                     {time}
                   </span>
@@ -182,12 +246,14 @@ export default function AgendaPage() {
                         </div>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => setIsNewAppointmentOpen(true)}
-                        className="w-full h-full rounded-xl border border-dashed border-transparent hover:border-slate-300 flex items-center px-4 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition"
-                      >
-                        + Agendar para às {time}
-                      </button>
+                      !isPastDate && (
+                        <button
+                          onClick={() => setIsNewAppointmentOpen(true)}
+                          className="w-full h-full rounded-xl border border-dashed border-transparent hover:border-slate-300 flex items-center px-4 text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                        >
+                          + Agendar para às {time}
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -196,32 +262,37 @@ export default function AgendaPage() {
           </div>
         )}
 
-        {/* SEMANA */}
+        {/* --- SEMANA --- */}
         {viewMode === 'week' && (
           <div className="flex-1 flex flex-col h-full">
             <div className="grid grid-cols-7 gap-2 pb-2 border-b border-slate-100 text-center shrink-0">
-              {weekDays.map((day) => (
-                <div
-                  key={day.name}
-                  className={`py-1.5 rounded-xl flex flex-col items-center justify-center ${
-                    day.isToday ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 font-medium'
-                  }`}
-                >
-                  <span className="text-xs">{day.name}</span>
-                  <span className="text-[10px] opacity-75">{day.date}</span>
-                </div>
-              ))}
+              {weekDays.map((day) => {
+                const isToday = isSameDay(day, new Date());
+                return (
+                  <div
+                    key={day.toString()}
+                    className={`py-1.5 rounded-xl flex flex-col items-center justify-center capitalize ${
+                      isToday ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 font-medium'
+                    }`}
+                  >
+                    <span className="text-xs">{format(day, 'eee', { locale: ptBR })}</span>
+                    <span className="text-[10px] opacity-75">{format(day, 'dd/MM')}</span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="flex-1 grid grid-cols-7 gap-2 pt-2 min-h-0">
               {weekDays.map((day) => {
-                const dayAppointments = day.isToday ? mockAppointments : [];
+                const dayStr = format(day, 'yyyy-MM-dd');
+                const dayAppointments = appointments.filter((app) => app.date === dayStr);
+                const isPast = isBefore(startOfDay(day), today);
 
                 return (
                   <div
-                    key={day.name}
+                    key={dayStr}
                     className={`rounded-xl border p-2 flex flex-col gap-2 transition ${
-                      day.isToday ? 'bg-blue-50/20 border-blue-200' : 'bg-slate-50/30 border-slate-100'
+                      isPast ? 'bg-slate-50/50 opacity-60 border-slate-100' : 'bg-slate-50/30 border-slate-100'
                     }`}
                   >
                     {dayAppointments.length > 0 ? (
@@ -239,12 +310,14 @@ export default function AgendaPage() {
                         </div>
                       ))
                     ) : (
-                      <button
-                        onClick={() => setIsNewAppointmentOpen(true)}
-                        className="flex-1 flex items-center justify-center text-[11px] text-slate-300 hover:text-slate-500 transition"
-                      >
-                        +
-                      </button>
+                      !isPast && (
+                        <button
+                          onClick={() => setIsNewAppointmentOpen(true)}
+                          className="flex-1 flex items-center justify-center text-[11px] text-slate-300 hover:text-slate-500 transition cursor-pointer"
+                        >
+                          +
+                        </button>
+                      )
                     )}
                   </div>
                 );
@@ -253,7 +326,7 @@ export default function AgendaPage() {
           </div>
         )}
 
-        {/* MÊS */}
+        {/* --- MÊS --- */}
         {viewMode === 'month' && (
           <div className="flex-1 flex flex-col h-full">
             <div className="grid grid-cols-7 text-center text-xs font-bold text-slate-500 pb-2 border-b border-slate-100 shrink-0">
@@ -261,32 +334,42 @@ export default function AgendaPage() {
             </div>
 
             <div className="flex-1 grid grid-cols-7 grid-rows-5 gap-2 pt-2 min-h-0">
-              {Array.from({ length: 31 }, (_, i) => {
-                const dayNum = i + 1;
-                const isToday = dayNum === 28;
+              {monthDays.map((day) => {
+                const dayStr = format(day, 'yyyy-MM-dd');
+                const isCurrentMonth = isSameMonth(day, monthStart);
+                const isToday = isSameDay(day, new Date());
+                const isPast = isBefore(startOfDay(day), today);
+                const dayAppointments = appointments.filter((app) => app.date === dayStr);
 
                 return (
                   <div
-                    key={dayNum}
+                    key={dayStr}
                     onClick={() => {
-                      if (isToday) {
-                        setViewMode('day'); // Ao clicar no dia com agendamentos, abre a visão do dia
-                      } else {
+                      setCurrentDate(day);
+                      if (dayAppointments.length > 0) {
+                        setViewMode('day');
+                      } else if (!isPast) {
                         setIsNewAppointmentOpen(true);
                       }
                     }}
-                    className={`p-2 rounded-xl border flex flex-col justify-between transition cursor-pointer hover:border-blue-400 ${
-                      isToday ? 'bg-blue-50/30 border-blue-300' : 'border-slate-100 bg-slate-50/20'
+                    className={`p-2 rounded-xl border flex flex-col justify-between transition ${
+                      !isCurrentMonth ? 'opacity-30 bg-slate-50/10' : 'bg-slate-50/20'
+                    } ${isPast ? 'bg-slate-100/40 text-slate-400' : 'cursor-pointer hover:border-blue-400'} ${
+                      isToday ? 'bg-blue-50/40 border-blue-300' : 'border-slate-100'
                     }`}
                   >
-                    <span className={`text-xs font-semibold ${isToday ? 'text-blue-600 font-bold' : 'text-slate-700'}`}>
-                      {dayNum}
+                    <span
+                      className={`text-xs font-semibold ${
+                        isToday ? 'text-blue-600 font-bold' : isPast ? 'text-slate-400' : 'text-slate-700'
+                      }`}
+                    >
+                      {format(day, 'd')}
                     </span>
 
-                    {isToday && (
+                    {dayAppointments.length > 0 && (
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-md font-semibold truncate">
-                          3 Atendimentos
+                          {dayAppointments.length} Atendimento{dayAppointments.length > 1 ? 's' : ''}
                         </span>
                       </div>
                     )}
@@ -298,6 +381,16 @@ export default function AgendaPage() {
         )}
 
       </div>
+
+      <NewAppointmentModal
+        isOpen={isNewAppointmentOpen}
+        onClose={() => setIsNewAppointmentOpen(false)}
+      />
+
+      <AppointmentDetailsModal
+        appointment={selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+      />
     </div>
   );
 }
