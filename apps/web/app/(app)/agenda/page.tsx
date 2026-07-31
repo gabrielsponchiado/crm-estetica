@@ -1,4 +1,4 @@
-import AgendaPage from "@/components/agenda/AgendaPage";
+import { AgendaPage } from "@/components/agenda/AgendaPage";
 
 
 export default function Page() {
