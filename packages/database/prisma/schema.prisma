@@ -43,7 +43,12 @@ model Patient {
 model Procedure {
   id                String             @id @default(uuid())
   name              String
-  recommendedMonths Int                // Intervalo recomendado para retorno (ex: 6 meses p/ botox)
+  description       String?
+  price             Decimal            @db.Decimal(10, 2)
+  durationMinutes   Int                @default(60)
+  recommendedMonths Int?               // Intervalo opcional p/ retorno
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   
   patientProcedures PatientProcedure[]
 }
