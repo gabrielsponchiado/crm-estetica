@@ -8,13 +8,16 @@ export interface CreateProcedureDTO {
   recommendedMonths?: number;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api';
+
 export function useCreateProcedure(onSuccess?: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createProcedure = async (data: CreateProcedureDTO) => {
     try {
       setIsSubmitting(true);
-      const res = await fetch('http://localhost:3333/api/procedures', {
+      
+      const res = await fetch(`${API_URL}/procedures`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
