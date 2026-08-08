@@ -23,49 +23,6 @@ export interface UpdateProcedureInput extends Partial<CreateProcedureInput> {}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api';
 
-const DEFAULT_FALLBACK_PROCEDURES: Procedure[] = [
-  {
-    id: 'demo-1',
-    name: 'Toxina Botulínica (Botox)',
-    durationMinutes: 60,
-    price: 1200,
-    description: 'Aplicação de toxina botulínica em terço superior da face (testa, glabela e pés de galinha) para prevenção de rugas dinâmicas.',
-    recommendedMonths: 6,
-  },
-  {
-    id: 'demo-2',
-    name: 'Preenchimento Labial com Ácido Hialurônico',
-    durationMinutes: 90,
-    price: 1500,
-    description: 'Restauração de volume, contorno e hidratação dos lábios com técnica personalizada e acabamento natural.',
-    recommendedMonths: 12,
-  },
-  {
-    id: 'demo-3',
-    name: 'Bioestimulador de Colágeno (Sculptra / Radiesse)',
-    durationMinutes: 60,
-    price: 2400,
-    description: 'Estímulo profundo da produção de colágeno natural da pele para firmeza, melhora do contorno e combate a flacidez.',
-    recommendedMonths: 12,
-  },
-  {
-    id: 'demo-4',
-    name: 'Limpeza de Pele Fotônica Profunda',
-    durationMinutes: 75,
-    price: 280,
-    description: 'Higienização, emoliência com vapor de ozônio, extração manual, alta frequência e LED terapia regenerativa.',
-    recommendedMonths: 1,
-  },
-  {
-    id: 'demo-5',
-    name: 'Peeling Químico Renovador',
-    durationMinutes: 45,
-    price: 450,
-    description: 'Aplicação de ácidos específicos para renovação celular, clareamento de manchas (melasma) e uniformização da textura da pele.',
-    recommendedMonths: 3,
-  },
-];
-
 export function useProcedures() {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -98,16 +55,15 @@ export function useProcedures() {
       }
       
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setProcedures(data.map(normalizeProcedure));
       } else {
-        // Se o banco estiver vazio, usa os procedimentos de demonstração
-        setProcedures(DEFAULT_FALLBACK_PROCEDURES);
+        setProcedures([]);
       }
     } catch (err: any) {
-      console.warn('API de procedimentos indisponível, utilizando dados locais:', err.message);
-      setError('Servidor indisponível. Exibindo dados locais.');
-      setProcedures((prev) => (prev.length > 0 ? prev : DEFAULT_FALLBACK_PROCEDURES));
+      console.error('Erro ao buscar procedimentos da API:', err.message);
+      setError('Falha ao conectar com a API de procedimentos.');
+      setProcedures([]);
     } finally {
       setLoading(false);
     }
@@ -132,19 +88,14 @@ export function useProcedures() {
         setProcedures((prev) => [normalizeProcedure(created), ...prev]);
         return true;
       }
-    } catch (err) {
-      console.warn('Erro ao conectar com API para criar procedimento. Salvando localmente.', err);
+      throw new Error('Falha ao criar procedimento no servidor');
+    } catch (err: any) {
+      console.error('Erro ao criar procedimento:', err.message);
+      setError(err.message || 'Erro ao salvar procedimento.');
+      return false;
     } finally {
       setIsSubmitting(false);
     }
-
-    // Fallback local se a API não estiver respondendo
-    const newLocal: Procedure = {
-      id: `local-${Date.now()}`,
-      ...input,
-    };
-    setProcedures((prev) => [newLocal, ...prev]);
-    return true;
   };
 
   // Atualiza um procedimento existente
@@ -163,32 +114,32 @@ export function useProcedures() {
         setProcedures((prev) => prev.map((p) => (p.id === id ? normalized : p)));
         return true;
       }
-    } catch (err) {
-      console.warn('Erro ao conectar com API para atualizar procedimento. Atualizando localmente.', err);
+      throw new Error('Falha ao atualizar procedimento no servidor');
+    } catch (err: any) {
+      console.error('Erro ao atualizar procedimento:', err.message);
+      setError(err.message || 'Erro ao atualizar procedimento.');
+      return false;
     } finally {
       setIsSubmitting(false);
     }
-
-    // Fallback local
-    setProcedures((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...input } : p))
-    );
-    return true;
   };
 
   // Exclui um procedimento
   const deleteProcedure = async (id: string): Promise<boolean> => {
     try {
-      await fetch(`${API_URL}/procedures/${id}`, {
+      const res = await fetch(`${API_URL}/procedures/${id}`, {
         method: 'DELETE',
       });
-    } catch (err) {
-      console.warn('Erro ao conectar com API para remover procedimento. Removendo localmente.', err);
+      if (res.ok) {
+        setProcedures((prev) => prev.filter((p) => p.id !== id));
+        return true;
+      }
+      throw new Error('Falha ao excluir procedimento no servidor');
+    } catch (err: any) {
+      console.error('Erro ao excluir procedimento:', err.message);
+      setError(err.message || 'Erro ao remover procedimento.');
+      return false;
     }
-
-    // Atualiza estado local em qualquer caso
-    setProcedures((prev) => prev.filter((p) => p.id !== id));
-    return true;
   };
 
   // Procedimentos filtrados e ordenados
