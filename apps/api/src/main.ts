@@ -5,10 +5,10 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Habilita CORS para o frontend Next.js
+  // Habilita CORS para qualquer origem (Vercel, localhost, etc.)
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
+    origin: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],
     credentials: true,
   });
 
