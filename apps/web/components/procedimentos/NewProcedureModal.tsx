@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { FormField } from '@/components/ui/form-field';
-import { Procedure, CreateProcedureInput } from '@/hooks/useProcedures';
-import { Sparkles, Clock, DollarSign, Calendar, Edit3, Loader2 } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { FormField } from "@/components/ui/form-field";
+import { Procedure, CreateProcedureInput } from "@/hooks/useProcedures";
+import {
+  Sparkles,
+  Clock,
+  DollarSign,
+  Calendar,
+  Edit3,
+  Loader2,
+} from "lucide-react";
 
 interface ProcedureModalProps {
   isOpen: boolean;
@@ -37,12 +44,14 @@ export function ProcedureModal({
   initialData,
   isSubmitting = false,
 }: ProcedureModalProps) {
-  const [name, setName] = useState('');
-  const [durationValue, setDurationValue] = useState('60');
-  const [durationUnit, setDurationUnit] = useState<'minutes' | 'hours'>('minutes');
-  const [price, setPrice] = useState('');
-  const [description, setDescription] = useState('');
-  const [recommendedMonths, setRecommendedMonths] = useState('');
+  const [name, setName] = useState("");
+  const [durationValue, setDurationValue] = useState("60");
+  const [durationUnit, setDurationUnit] = useState<"minutes" | "hours">(
+    "minutes",
+  );
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [recommendedMonths, setRecommendedMonths] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
 
   const isEditing = Boolean(initialData);
@@ -52,25 +61,32 @@ export function ProcedureModal({
       setErrors({});
       if (initialData) {
         setName(initialData.name);
-        
-        if (initialData.durationMinutes % 60 === 0 && initialData.durationMinutes >= 60) {
+
+        if (
+          initialData.durationMinutes % 60 === 0 &&
+          initialData.durationMinutes >= 60
+        ) {
           setDurationValue(String(initialData.durationMinutes / 60));
-          setDurationUnit('hours');
+          setDurationUnit("hours");
         } else {
           setDurationValue(String(initialData.durationMinutes));
-          setDurationUnit('minutes');
+          setDurationUnit("minutes");
         }
 
         setPrice(String(initialData.price));
-        setDescription(initialData.description || '');
-        setRecommendedMonths(initialData.recommendedMonths ? String(initialData.recommendedMonths) : '');
+        setDescription(initialData.description || "");
+        setRecommendedMonths(
+          initialData.recommendedMonths != null
+            ? String(initialData.recommendedMonths)
+            : "",
+        );
       } else {
-        setName('');
-        setDurationValue('60');
-        setDurationUnit('minutes');
-        setPrice('');
-        setDescription('');
-        setRecommendedMonths('');
+        setName("");
+        setDurationValue("60");
+        setDurationUnit("minutes");
+        setPrice("");
+        setDescription("");
+        setRecommendedMonths("");
       }
     }
   }, [isOpen, initialData]);
@@ -79,17 +95,17 @@ export function ProcedureModal({
     const newErrors: FormErrors = {};
 
     if (!name.trim()) {
-      newErrors.name = 'Por favor, informe o nome do procedimento.';
+      newErrors.name = "Por favor, informe o nome do procedimento.";
     }
 
     const numDuration = parseFloat(durationValue);
     if (!durationValue || isNaN(numDuration) || numDuration <= 0) {
-      newErrors.durationValue = 'Informe uma duração válida.';
+      newErrors.durationValue = "Informe uma duração válida.";
     }
 
-    const parsedPrice = parseFloat(price.replace(',', '.'));
-    if (!price || isNaN(parsedPrice) || parsedPrice <= 0) {
-      newErrors.price = 'Informe um preço válido maior que zero.';
+    const parsedPrice = parseFloat(price.replace(",", "."));
+    if (!price || isNaN(parsedPrice) || parsedPrice < 0) {
+      newErrors.price = "Informe um preço válido maior que zero.";
     }
 
     setErrors(newErrors);
@@ -98,24 +114,27 @@ export function ProcedureModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) {
       return;
     }
-
     const rawValue = parseFloat(durationValue) || 0;
-    const totalMinutes = durationUnit === 'hours' ? Math.round(rawValue * 60) : Math.round(rawValue);
-
+    const totalMinutes =
+      durationUnit === "hours"
+        ? Math.round(rawValue * 60)
+        : Math.round(rawValue);
     const payload: CreateProcedureInput = {
       name: name.trim(),
       durationMinutes: totalMinutes,
-      price: Number(price.replace(',', '.')),
+      price: Number(price.replace(",", ".")),
       description: description.trim(),
-      recommendedMonths: recommendedMonths ? Number(recommendedMonths) : undefined,
+      recommendedMonths: recommendedMonths
+        ? Number(recommendedMonths)
+        : undefined,
     };
-
-    await onSave(payload);
-    onClose();
+    const success = await onSave(payload);
+    if (success) {
+      onClose();
+    }
   };
 
   return (
@@ -129,14 +148,15 @@ export function ProcedureModal({
               </>
             ) : (
               <>
-                <Sparkles className="w-5 h-5 text-primary" /> Cadastrar Novo Procedimento
+                <Sparkles className="w-5 h-5 text-primary" /> Cadastrar Novo
+                Procedimento
               </>
             )}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Atualize as informações do procedimento do catálogo.'
-              : 'Adicione um novo serviço com preço e duração estimada para a sua clínica.'}
+              ? "Atualize as informações do procedimento do catálogo."
+              : "Adicione um novo serviço com preço e duração estimada para a sua clínica."}
           </DialogDescription>
         </DialogHeader>
 
@@ -148,15 +168,20 @@ export function ProcedureModal({
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                if (errors.name)
+                  setErrors((prev) => ({ ...prev, name: undefined }));
               }}
-              className={`h-10 ${errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+              className={`h-10 ${errors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
             />
           </FormField>
 
           {/* Duração & Preço */}
           <div className="grid grid-cols-2 gap-3 items-start">
-            <FormField label="Duração Padrão" required error={errors.durationValue}>
+            <FormField
+              label="Duração Padrão"
+              required
+              error={errors.durationValue}
+            >
               <div className="flex items-center gap-1.5">
                 <Input
                   type="number"
@@ -166,13 +191,19 @@ export function ProcedureModal({
                   value={durationValue}
                   onChange={(e) => {
                     setDurationValue(e.target.value);
-                    if (errors.durationValue) setErrors((prev) => ({ ...prev, durationValue: undefined }));
+                    if (errors.durationValue)
+                      setErrors((prev) => ({
+                        ...prev,
+                        durationValue: undefined,
+                      }));
                   }}
-                  className={`flex-1 h-10 ${errors.durationValue ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  className={`flex-1 h-10 ${errors.durationValue ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
                 <select
                   value={durationUnit}
-                  onChange={(e) => setDurationUnit(e.target.value as 'minutes' | 'hours')}
+                  onChange={(e) =>
+                    setDurationUnit(e.target.value as "minutes" | "hours")
+                  }
                   aria-label="Unidade de duração"
                   className="h-10 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                 >
@@ -190,9 +221,10 @@ export function ProcedureModal({
                 value={price}
                 onChange={(e) => {
                   setPrice(e.target.value);
-                  if (errors.price) setErrors((prev) => ({ ...prev, price: undefined }));
+                  if (errors.price)
+                    setErrors((prev) => ({ ...prev, price: undefined }));
                 }}
-                className={`h-10 ${errors.price ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                className={`h-10 ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
             </FormField>
           </div>
@@ -224,18 +256,27 @@ export function ProcedureModal({
           </FormField>
 
           <DialogFooter className="pt-3 gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[140px]">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="min-w-[140px]"
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
                 </>
               ) : isEditing ? (
-                'Salvar Alterações'
+                "Salvar Alterações"
               ) : (
-                'Cadastrar Procedimento'
+                "Cadastrar Procedimento"
               )}
             </Button>
           </DialogFooter>
