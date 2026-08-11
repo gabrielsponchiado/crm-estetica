@@ -27,24 +27,24 @@ import { Button } from "@/components/ui/button";
 const MOCK_PATIENTS = [
   {
     id: "1",
-    name: "Ana Silva",
+    name: "Usuário Teste",
     phone: "(11) 98765-4321",
     cpf: "123.456.789-00",
-    email: "ana.silva@email.com",
+    email: "usuario@email.com",
   },
   {
     id: "2",
-    name: "Beatriz Costa",
+    name: "Usuário",
     phone: "(11) 91234-5678",
     cpf: "987.654.321-11",
-    email: "bea.costa@email.com",
+    email: "user@email.com",
   },
   {
     id: "3",
-    name: "Carla Souza",
+    name: "Username",
     phone: "(11) 97777-8888",
     cpf: "456.789.123-22",
-    email: "carla.souza@email.com",
+    email: "username@email.com",
   },
 ];
 
