@@ -59,7 +59,7 @@ model PatientProcedure {
   patientId    String
   procedureId  String
   performedAt  DateTime
-  nextReturnAt DateTime
+  nextReturnAt DateTime?
   notified     Boolean   @default(false)
 
   patient   Patient   @relation(fields: [patientId], references: [id])

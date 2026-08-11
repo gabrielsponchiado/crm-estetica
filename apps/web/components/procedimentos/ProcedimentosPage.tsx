@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { ProcedureModal } from './NewProcedureModal';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { ProcedureModal } from "./NewProcedureModal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardHeader,
@@ -13,14 +13,14 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Plus,
   Search,
@@ -45,8 +45,12 @@ import {
   ArrowUpDown,
   X,
   AlertTriangle,
-} from 'lucide-react';
-import { useProcedures, Procedure, CreateProcedureInput } from '@/hooks/useProcedures';
+} from "lucide-react";
+import {
+  useProcedures,
+  Procedure,
+  CreateProcedureInput,
+} from "@/hooks/useProcedures";
 
 export function ProcedimentosPage() {
   const {
@@ -65,7 +69,9 @@ export function ProcedimentosPage() {
 
   // Estados dos Modais
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(null);
+  const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(
+    null,
+  );
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Formatação de duração
@@ -73,7 +79,9 @@ export function ProcedimentosPage() {
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
-      return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+      return remainingMinutes > 0
+        ? `${hours}h ${remainingMinutes}min`
+        : `${hours}h`;
     }
     return `${minutes} min`;
   };
@@ -101,10 +109,10 @@ export function ProcedimentosPage() {
 
   const handleSaveModal = async (data: CreateProcedureInput) => {
     if (selectedProcedure) {
-      await updateProcedure(selectedProcedure.id, data);
-    } else {
-      await createProcedure(data);
+      return await updateProcedure(selectedProcedure.id, data);
     }
+
+    return await createProcedure(data);
   };
 
   const handleConfirmDelete = async () => {
@@ -124,11 +132,16 @@ export function ProcedimentosPage() {
             Catálogo de Procedimentos
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie todos os tratamentos estéticos, durações, preços e frequências de retorno.
+            Gerencie todos os tratamentos estéticos, durações, preços e
+            frequências de retorno.
           </p>
         </div>
 
-        <Button onClick={handleOpenCreateModal} size="default" className="gap-2 shadow-sm font-semibold">
+        <Button
+          onClick={handleOpenCreateModal}
+          size="default"
+          className="gap-2 shadow-sm font-semibold"
+        >
           <Plus className="w-4 h-4" /> Novo Procedimento
         </Button>
       </div>
@@ -139,17 +152,28 @@ export function ProcedimentosPage() {
           <div className="p-3 rounded-full bg-primary/10 text-primary shrink-0 mb-1">
             <Layers className="w-5 h-5" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">Total de Procedimentos</p>
-          <h3 className="text-2xl font-bold text-foreground tracking-tight">{loading ? '...' : stats.total}</h3>
+          <p className="text-xs text-muted-foreground font-medium">
+            Total de Procedimentos
+          </p>
+          <h3 className="text-2xl font-bold text-foreground tracking-tight">
+            {loading ? "..." : stats.total}
+          </h3>
         </Card>
 
         <Card className="p-6 bg-card/60 backdrop-blur-xs flex flex-col items-center justify-center text-center gap-2">
           <div className="p-3 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mb-1">
             <DollarSign className="w-5 h-5" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">Preço Médio por Serviço</p>
+          <p className="text-xs text-muted-foreground font-medium">
+            Preço Médio por Serviço
+          </p>
           <h3 className="text-2xl font-bold text-foreground tracking-tight">
-            {loading ? '...' : stats.averagePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {loading
+              ? "..."
+              : stats.averagePrice.toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
           </h3>
         </Card>
 
@@ -157,9 +181,11 @@ export function ProcedimentosPage() {
           <div className="p-3 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0 mb-1">
             <TrendingUp className="w-5 h-5" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">Duração Média em Clínica</p>
+          <p className="text-xs text-muted-foreground font-medium">
+            Duração Média em Clínica
+          </p>
           <h3 className="text-2xl font-bold text-foreground tracking-tight">
-            {loading ? '...' : formatDuration(stats.averageDuration)}
+            {loading ? "..." : formatDuration(stats.averageDuration)}
           </h3>
         </Card>
       </div>
@@ -177,7 +203,7 @@ export function ProcedimentosPage() {
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm('')}
+              onClick={() => setSearchTerm("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="w-4 h-4" />
@@ -233,11 +259,19 @@ export function ProcedimentosPage() {
                       <MoreVertical className="w-4 h-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => handleOpenEditModal(proc)} className="cursor-pointer">
-                        <Edit3 className="w-4 h-4 mr-2 text-muted-foreground" /> Editar
+                      <DropdownMenuItem
+                        onClick={() => handleOpenEditModal(proc)}
+                        className="cursor-pointer"
+                      >
+                        <Edit3 className="w-4 h-4 mr-2 text-muted-foreground" />{" "}
+                        Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(proc)} className="cursor-pointer">
-                        <Copy className="w-4 h-4 mr-2 text-muted-foreground" /> Duplicar
+                      <DropdownMenuItem
+                        onClick={() => handleDuplicate(proc)}
+                        className="cursor-pointer"
+                      >
+                        <Copy className="w-4 h-4 mr-2 text-muted-foreground" />{" "}
+                        Duplicar
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -251,7 +285,7 @@ export function ProcedimentosPage() {
                 </div>
 
                 <CardDescription className="line-clamp-2 text-xs leading-relaxed">
-                  {proc.description || 'Nenhuma descrição informada.'}
+                  {proc.description || "Nenhuma descrição informada."}
                 </CardDescription>
               </CardHeader>
 
@@ -263,7 +297,10 @@ export function ProcedimentosPage() {
                   </span>
 
                   {proc.recommendedMonths && (
-                    <Badge variant="outline" className="text-[11px] gap-1 font-normal py-0.5">
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] gap-1 font-normal py-0.5"
+                    >
                       <Calendar className="w-3 h-3 text-muted-foreground" />
                       Retorno: {proc.recommendedMonths}m
                     </Badge>
@@ -272,12 +309,17 @@ export function ProcedimentosPage() {
               </CardContent>
 
               <CardFooter className="pt-4 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground font-medium">Valor do serviço</span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Valor do serviço
+                </span>
                 <Badge
                   variant="secondary"
                   className="text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1"
                 >
-                  {proc.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  {proc.price.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
                 </Badge>
               </CardFooter>
             </Card>
@@ -289,19 +331,29 @@ export function ProcedimentosPage() {
             <Sparkles className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-semibold text-foreground">Nenhum procedimento encontrado</h3>
+            <h3 className="text-base font-semibold text-foreground">
+              Nenhum procedimento encontrado
+            </h3>
             <p className="text-xs text-muted-foreground max-w-sm">
               {searchTerm
                 ? `Nenhum procedimento corresponde ao termo "${searchTerm}".`
-                : 'Você ainda não cadastrou nenhum procedimento no catálogo da clínica.'}
+                : "Você ainda não cadastrou nenhum procedimento no catálogo da clínica."}
             </p>
           </div>
           {searchTerm ? (
-            <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSearchTerm("")}
+            >
               Limpar busca
             </Button>
           ) : (
-            <Button size="sm" onClick={handleOpenCreateModal} className="gap-1.5 mt-2">
+            <Button
+              size="sm"
+              onClick={handleOpenCreateModal}
+              className="gap-1.5 mt-2"
+            >
               <Plus className="w-4 h-4" /> Cadastrar Primeiro Procedimento
             </Button>
           )}
@@ -318,14 +370,18 @@ export function ProcedimentosPage() {
       />
 
       {/* Modal de Confirmação de Exclusão */}
-      <Dialog open={Boolean(deletingId)} onOpenChange={(open) => !open && setDeletingId(null)}>
+      <Dialog
+        open={Boolean(deletingId)}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" /> Excluir Procedimento?
             </DialogTitle>
             <DialogDescription className="text-sm">
-              Esta ação removerá este procedimento do catálogo da clínica. Esta ação não poderá ser desfeita.
+              Esta ação removerá este procedimento do catálogo da clínica. Esta
+              ação não poderá ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 pt-2">

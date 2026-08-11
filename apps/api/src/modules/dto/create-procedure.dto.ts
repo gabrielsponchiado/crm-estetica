@@ -19,7 +19,6 @@ export class CreateProcedureDto {
 
   @IsInt({ message: 'O intervalo de retorno deve ser um número inteiro de meses'})
   @Min(1, { message: 'O intervalo de retorno deve ser de pelo menos 1 mês'})
-  @IsNumber()
   @IsOptional()
   recommendedMonths?: number;
 }
