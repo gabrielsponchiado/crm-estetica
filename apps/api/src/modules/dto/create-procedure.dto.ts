@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, Min, IsInt } from 'class-validator';
 
 export class CreateProcedureDto {
   @IsString()
@@ -17,6 +17,8 @@ export class CreateProcedureDto {
   @Min(1, { message: 'A duração deve ter pelo menos 1 minuto' })
   durationMinutes: number;
 
+  @IsInt({ message: 'O intervalo de retorno deve ser um número inteiro de meses'})
+  @Min(1, { message: 'O intervalo de retorno deve ser de pelo menos 1 mês'})
   @IsNumber()
   @IsOptional()
   recommendedMonths?: number;
