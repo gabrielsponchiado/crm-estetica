@@ -1,151 +1,248 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { FormField } from '@/components/ui/form-field';
+import { Procedure, CreateProcedureInput } from '@/hooks/useProcedures';
+import { Sparkles, Clock, DollarSign, Calendar, Edit3, Loader2 } from 'lucide-react';
 
-interface NewProcedureModalProps {
+interface ProcedureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (procedure: { name: string; durationMinutes: number; price: number; description: string }) => void;
+  onSave: (data: CreateProcedureInput) => Promise<boolean | void> | void;
+  initialData?: Procedure | null;
+  isSubmitting?: boolean;
 }
 
-export function NewProcedureModal({ isOpen, onClose, onSave }: NewProcedureModalProps) {
+interface FormErrors {
+  name?: string;
+  durationValue?: string;
+  price?: string;
+}
+
+export function ProcedureModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+  isSubmitting = false,
+}: ProcedureModalProps) {
   const [name, setName] = useState('');
   const [durationValue, setDurationValue] = useState('60');
   const [durationUnit, setDurationUnit] = useState<'minutes' | 'hours'>('minutes');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
+  const [recommendedMonths, setRecommendedMonths] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  const resetForm = () => {
-    setName('');
-    setDurationValue('60');
-    setDurationUnit('minutes');
-    setPrice('');
-    setDescription('');
-  };
+  const isEditing = Boolean(initialData);
 
   useEffect(() => {
-    if (isOpen) resetForm();
-  }, [isOpen]);
+    if (isOpen) {
+      setErrors({});
+      if (initialData) {
+        setName(initialData.name);
+        
+        if (initialData.durationMinutes % 60 === 0 && initialData.durationMinutes >= 60) {
+          setDurationValue(String(initialData.durationMinutes / 60));
+          setDurationUnit('hours');
+        } else {
+          setDurationValue(String(initialData.durationMinutes));
+          setDurationUnit('minutes');
+        }
 
-  if (!isOpen) return null;
+        setPrice(String(initialData.price));
+        setDescription(initialData.description || '');
+        setRecommendedMonths(initialData.recommendedMonths ? String(initialData.recommendedMonths) : '');
+      } else {
+        setName('');
+        setDurationValue('60');
+        setDurationUnit('minutes');
+        setPrice('');
+        setDescription('');
+        setRecommendedMonths('');
+      }
+    }
+  }, [isOpen, initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!name.trim()) {
+      newErrors.name = 'Por favor, informe o nome do procedimento.';
+    }
+
+    const numDuration = parseFloat(durationValue);
+    if (!durationValue || isNaN(numDuration) || numDuration <= 0) {
+      newErrors.durationValue = 'Informe uma duração válida.';
+    }
+
+    const parsedPrice = parseFloat(price.replace(',', '.'));
+    if (!price || isNaN(parsedPrice) || parsedPrice <= 0) {
+      newErrors.price = 'Informe um preço válido maior que zero.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     const rawValue = parseFloat(durationValue) || 0;
     const totalMinutes = durationUnit === 'hours' ? Math.round(rawValue * 60) : Math.round(rawValue);
 
-    if (onSave) {
-      onSave({
-        name,
-        durationMinutes: totalMinutes,
-        price: Number(price.replace(',', '.')),
-        description,
-      });
-    }
+    const payload: CreateProcedureInput = {
+      name: name.trim(),
+      durationMinutes: totalMinutes,
+      price: Number(price.replace(',', '.')),
+      description: description.trim(),
+      recommendedMonths: recommendedMonths ? Number(recommendedMonths) : undefined,
+    };
+
+    await onSave(payload);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">Novo Procedimento</h2>
-            <p className="text-xs text-slate-500">Cadastre um serviço oferecido pela clínica.</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+            {isEditing ? (
+              <>
+                <Edit3 className="w-5 h-5 text-primary" /> Editar Procedimento
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5 text-primary" /> Cadastrar Novo Procedimento
+              </>
+            )}
+          </DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? 'Atualize as informações do procedimento do catálogo.'
+              : 'Adicione um novo serviço com preço e duração estimada para a sua clínica.'}
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4 text-sm">
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-slate-700 text-xs">Nome do Procedimento</label>
-            <input
-              type="text"
-              required
-              placeholder="Ex: Preenchimento Labial"
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 py-2">
+          {/* Nome do Procedimento */}
+          <FormField label="Nome do Procedimento" required error={errors.name}>
+            <Input
+              placeholder="Ex: Preenchimento Labial com Ácido Hialurônico"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full h-10 px-3 bg-slate-100 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition"
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              className={`h-10 ${errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             />
-          </div>
+          </FormField>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-slate-700 text-xs">Duração Padrão</label>
-              
-              <div className="flex items-center bg-slate-100 rounded-xl px-3 h-10 focus-within:ring-2 focus-within:ring-blue-600 transition">
-                <input
+          {/* Duração & Preço */}
+          <div className="grid grid-cols-2 gap-3 items-start">
+            <FormField label="Duração Padrão" required error={errors.durationValue}>
+              <div className="flex items-center gap-1.5">
+                <Input
                   type="number"
                   step="any"
                   min="1"
-                  required
                   placeholder="60"
                   value={durationValue}
-                  onChange={(e) => setDurationValue(e.target.value)}
-                  className="w-full bg-transparent text-slate-900 outline-none text-xs font-medium"
+                  onChange={(e) => {
+                    setDurationValue(e.target.value);
+                    if (errors.durationValue) setErrors((prev) => ({ ...prev, durationValue: undefined }));
+                  }}
+                  className={`flex-1 h-10 ${errors.durationValue ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 />
-                
-                <div className="h-4 w-px bg-slate-300 mx-1.5 shrink-0" />
-
                 <select
                   value={durationUnit}
                   onChange={(e) => setDurationUnit(e.target.value as 'minutes' | 'hours')}
-                  className="bg-transparent text-slate-600 font-semibold text-xs outline-none cursor-pointer hover:text-slate-900 transition shrink-0"
+                  aria-label="Unidade de duração"
+                  className="h-10 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                 >
                   <option value="minutes">min</option>
                   <option value="hours">h</option>
                 </select>
               </div>
-            </div>
+            </FormField>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="font-semibold text-slate-700 text-xs">Preço (R$)</label>
-              <input
+            <FormField label="Preço (R$)" required error={errors.price}>
+              <Input
                 type="number"
                 step="0.01"
-                required
-                placeholder="800.00"
+                placeholder="1500.00"
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-full h-10 px-3 bg-slate-100 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 transition text-xs"
+                onChange={(e) => {
+                  setPrice(e.target.value);
+                  if (errors.price) setErrors((prev) => ({ ...prev, price: undefined }));
+                }}
+                className={`h-10 ${errors.price ? 'border-destructive focus-visible:ring-destructive' : ''}`}
               />
-            </div>
+            </FormField>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="font-semibold text-slate-700 text-xs">Descrição / Recomendações (Opcional)</label>
-            <textarea
+          {/* Retorno Recomendado */}
+          <FormField
+            label="Retorno Recomendado (Meses)"
+            description="Usado pelo CRM para sugerir novo agendamento ao paciente."
+          >
+            <Input
+              type="number"
+              min="1"
+              placeholder="Ex: 6 (para lembrete automático aos 6 meses)"
+              value={recommendedMonths}
+              onChange={(e) => setRecommendedMonths(e.target.value)}
+              className="h-10"
+            />
+          </FormField>
+
+          {/* Descrição */}
+          <FormField label="Descrição e Recomendações (Opcional)">
+            <Textarea
               rows={3}
-              placeholder="Detalhes sobre o procedimento ou cuidados..."
+              placeholder="Detalhes sobre o procedimento, produtos recomendados ou cuidados pós-aplicação..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-3 bg-slate-100 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 resize-none text-xs"
+              className="resize-none"
             />
-          </div>
+          </FormField>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 mt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-10 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition cursor-pointer"
-            >
+          <DialogFooter className="pt-3 gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancelar
-            </button>
-            <button
-              type="submit"
-              className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition shadow-sm cursor-pointer"
-            >
-              Salvar Procedimento
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="min-w-[140px]">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
+                </>
+              ) : isEditing ? (
+                'Salvar Alterações'
+              ) : (
+                'Cadastrar Procedimento'
+              )}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
+
+export { ProcedureModal as NewProcedureModal };
