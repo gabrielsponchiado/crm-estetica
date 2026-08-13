@@ -7,36 +7,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums para garantir tipagem e evitar erros
+enum Role {
+  ADMIN
+  RECEPTIONIST
+  CLINICIAN
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+enum QuoteStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
 // Usuários do sistema (Autenticação)
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("ADMIN") // ADMIN, RECEPTIONIST, CLINICIAN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role          @default(ADMIN)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  appointments Appointment[]
 }
 
 // Pacientes da clínica
 model Patient {
-  id          String             @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   phone       String
   email       String?
   birthDate   DateTime?
-  cpf         String?            @unique
+  cpf         String?   @unique
   address     String?
-  
+
   // Ficha de anamnese (histórico de saúde, alergias, remédios, etc)
-  anamnesis   Json?              
-  
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  
+  anamnesis   Json?
+
+  // Soft delete: guarda a data de exclusão em vez de apagar do banco
+  deletedAt   DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   evaluations Evaluation[]
   quotes      Quote[]
   procedures  PatientProcedure[]
+  appointments Appointment[]
 }
 
 // Catálogo de procedimentos estéticos
@@ -49,8 +78,9 @@ model Procedure {
   recommendedMonths Int?               // Intervalo opcional p/ retorno
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  
+
   patientProcedures PatientProcedure[]
+  appointments      Appointment[]
 }
 
 // Procedimentos realizados no paciente
@@ -62,32 +92,51 @@ model PatientProcedure {
   nextReturnAt DateTime?
   notified     Boolean   @default(false)
 
-  patient   Patient   @relation(fields: [patientId], references: [id])
+  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
   procedure Procedure @relation(fields: [procedureId], references: [id])
 }
 
-// Avaliações / Sessões
+// Avaliações / Sessões (Fotos Antes & Depois)
 model Evaluation {
   id           String   @id @default(uuid())
   patientId    String
   title        String?  // Ex: "Avaliação inicial", "Retorno Botox"
   notes        String
-  beforePhotos String[] // Como você usa PostgreSQL, podemos salvar várias fotos em lista
-  afterPhotos  String[] 
+  beforePhotos String[]
+  afterPhotos  String[]
   createdAt    DateTime @default(now())
 
-  patient Patient @relation(fields: [patientId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
 
 // Orçamentos
 model Quote {
-  id         String   @id @default(uuid())
+  id         String      @id @default(uuid())
   patientId  String
-  totalValue Decimal
-  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  details    Json     // Itens do orçamento flexíveis (procedimento, quantidade, valor)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  totalValue Decimal     @db.Decimal(10, 2)
+  status     QuoteStatus @default(PENDING)
+  details    Json        // Itens do orçamento flexíveis
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
-  patient Patient @relation(fields: [patientId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// Agenda de Consultas / Atendimentos
+model Appointment {
+  id              String            @id @default(uuid())
+  patientId       String
+  userId          String?           // Profissional responsável
+  procedureId     String?
+  scheduledAt     DateTime
+  durationMinutes Int               @default(60)
+  status          AppointmentStatus @default(SCHEDULED)
+  notes           String?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  patient   Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  user      User?      @relation(fields: [userId], references: [id])
+  procedure Procedure? @relation(fields: [procedureId], references: [id])
 }
