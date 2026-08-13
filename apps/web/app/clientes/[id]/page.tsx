@@ -18,12 +18,14 @@ export default function PatientDetailsPage({ params }: PatientDetailsPageProps) 
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api';
+
   // Buscar dados reais do paciente pelo ID
   useEffect(() => {
     async function fetchPatient() {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:3333/api/patients/${id}`);
+        const response = await fetch(`${API_URL}/patients/${id}`);
         if (response.ok) {
           const data = await response.json();
           setPatient(data);
