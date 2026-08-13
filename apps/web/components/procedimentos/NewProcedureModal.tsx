@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
-import { Procedure, CreateProcedureInput } from "@/hooks/useProcedures";
+import type { Procedure, CreateProcedureInput, ProcedureFormErrors, DurationUnit } from "@/types/procedure";
 import {
   Sparkles,
   Clock,
@@ -31,11 +31,7 @@ interface ProcedureModalProps {
   isSubmitting?: boolean;
 }
 
-interface FormErrors {
-  name?: string;
-  durationValue?: string;
-  price?: string;
-}
+
 
 export function ProcedureModal({
   isOpen,
@@ -46,13 +42,11 @@ export function ProcedureModal({
 }: ProcedureModalProps) {
   const [name, setName] = useState("");
   const [durationValue, setDurationValue] = useState("60");
-  const [durationUnit, setDurationUnit] = useState<"minutes" | "hours">(
-    "minutes",
-  );
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>("minutes");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [recommendedMonths, setRecommendedMonths] = useState("");
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<ProcedureFormErrors>({});
 
   const isEditing = Boolean(initialData);
 
@@ -92,7 +86,7 @@ export function ProcedureModal({
   }, [isOpen, initialData]);
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: ProcedureFormErrors = {};
 
     if (!name.trim()) {
       newErrors.name = "Por favor, informe o nome do procedimento.";

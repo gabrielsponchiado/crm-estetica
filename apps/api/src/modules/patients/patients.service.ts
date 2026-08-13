@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Prisma } from '@prisma/client'; // Importação da tipagem do Prisma
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
 
@@ -23,7 +24,8 @@ export class PatientsService {
   async findAll(page: number = 1, limit: number = 10, search?: string) {
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    // Tipagem oficial sem usar 'any'
+    const where: Prisma.PatientWhereInput = {
       deletedAt: null,
     };
 
