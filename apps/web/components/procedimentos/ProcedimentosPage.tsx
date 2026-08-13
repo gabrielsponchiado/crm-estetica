@@ -46,6 +46,7 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 import {
   useProcedures,
   Procedure,
@@ -97,27 +98,49 @@ export function ProcedimentosPage() {
     setIsModalOpen(true);
   };
 
-  const handleDuplicate = (procedure: Procedure) => {
-    createProcedure({
+  const handleDuplicate = async (procedure: Procedure) => {
+    const success = await createProcedure({
       name: `${procedure.name} (Cópia)`,
       durationMinutes: procedure.durationMinutes,
       price: procedure.price,
       description: procedure.description,
       recommendedMonths: procedure.recommendedMonths,
     });
+    if (success) {
+      toast.add({ title: "Procedimento duplicado", description: "Cópia criada com sucesso.", type: "success" });
+    } else {
+      toast.add({ title: "Erro", description: "Falha ao duplicar procedimento.", type: "error" });
+    }
   };
 
   const handleSaveModal = async (data: CreateProcedureInput) => {
+    let success = false;
     if (selectedProcedure) {
-      return await updateProcedure(selectedProcedure.id, data);
+      success = await updateProcedure(selectedProcedure.id, data);
+      if (success) {
+        toast.add({ title: "Procedimento atualizado", description: "Informações salvas com sucesso.", type: "success" });
+      } else {
+        toast.add({ title: "Erro", description: "Falha ao atualizar.", type: "error" });
+      }
+    } else {
+      success = await createProcedure(data);
+      if (success) {
+        toast.add({ title: "Procedimento criado", description: "Novo procedimento adicionado com sucesso.", type: "success" });
+      } else {
+        toast.add({ title: "Erro", description: "Falha ao criar.", type: "error" });
+      }
     }
-
-    return await createProcedure(data);
+    return success;
   };
 
   const handleConfirmDelete = async () => {
     if (deletingId) {
-      await deleteProcedure(deletingId);
+      const success = await deleteProcedure(deletingId);
+      if (success) {
+        toast.add({ title: "Procedimento excluído", description: "Removido do catálogo.", type: "success" });
+      } else {
+        toast.add({ title: "Erro", description: "Falha ao excluir procedimento.", type: "error" });
+      }
       setDeletingId(null);
     }
   };

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { maskCpf, maskPhone } from "@/lib/masks";
+import Link from "next/link";
 import {
   Users,
   Phone,
@@ -15,6 +16,7 @@ import {
   ChevronRight,
   Pencil,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Table,
@@ -30,11 +32,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { usePatients } from "@/hooks/usePatient";
 import type { Patient, CreatePatientInput } from "@/types/patient";
 import { NewPatientModal } from "@/components/clientes/NewPatientModal";
+import { toast } from "@/components/ui/toast";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -56,6 +68,7 @@ export default function ClientesPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleOpenCreateModal = () => {
     setSelectedPatient(null);
@@ -68,16 +81,58 @@ export default function ClientesPage() {
   };
 
   const handleSavePatient = async (data: CreatePatientInput) => {
+    let success = false;
     if (selectedPatient) {
-      return await updatePatient(selectedPatient.id, data);
+      success = await updatePatient(selectedPatient.id, data);
+      if (success) {
+        toast.add({
+          title: "Cliente atualizado",
+          description: "As informações foram salvas com sucesso.",
+          type: "success",
+        });
+      } else {
+        toast.add({
+          title: "Erro",
+          description: "Falha ao atualizar o cliente.",
+          type: "error",
+        });
+      }
     } else {
-      return await createPatient(data);
+      success = await createPatient(data);
+      if (success) {
+        toast.add({
+          title: "Cliente cadastrado",
+          description: "O novo cliente foi adicionado com sucesso.",
+          type: "success",
+        });
+      } else {
+        toast.add({
+          title: "Erro",
+          description: "Falha ao cadastrar o cliente.",
+          type: "error",
+        });
+      }
     }
+    return success;
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este cliente?")) {
-      await deletePatient(id);
+  const handleConfirmDelete = async () => {
+    if (deletingId) {
+      const success = await deletePatient(deletingId);
+      if (success) {
+        toast.add({
+          title: "Cliente excluído",
+          description: "O cliente foi removido com sucesso.",
+          type: "success",
+        });
+      } else {
+        toast.add({
+          title: "Erro",
+          description: "Não foi possível excluir o cliente.",
+          type: "error",
+        });
+      }
+      setDeletingId(null);
     }
   };
 
@@ -90,9 +145,25 @@ export default function ClientesPage() {
       if (currentPage <= 4) {
         pages.push(1, 2, 3, 4, 5, "...", totalPages);
       } else if (currentPage >= totalPages - 3) {
-        pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+        pages.push(
+          1,
+          "...",
+          totalPages - 4,
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages,
+        );
       } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages,
+        );
       }
     }
     return pages;
@@ -143,37 +214,70 @@ export default function ClientesPage() {
         </div>
       </div>
 
-      {/* Tabela (Ajustável ao conteúdo, sem caixa branca sobramdo e com colunas cravadas) */}
+      {/* Tabela */}
       <div className="rounded-xl border bg-card overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="w-[28%] font-semibold py-3.5">Nome</TableHead>
-                <TableHead className="w-[22%] font-semibold py-3.5">Telefone / WhatsApp</TableHead>
-                <TableHead className="w-[20%] font-semibold py-3.5">CPF</TableHead>
-                <TableHead className="w-[25%] font-semibold py-3.5">E-mail</TableHead>
+                <TableHead className="w-[28%] font-semibold py-3.5">
+                  Nome
+                </TableHead>
+                <TableHead className="w-[22%] font-semibold py-3.5">
+                  Telefone / WhatsApp
+                </TableHead>
+                <TableHead className="w-[20%] font-semibold py-3.5">
+                  CPF
+                </TableHead>
+                <TableHead className="w-[25%] font-semibold py-3.5">
+                  E-mail
+                </TableHead>
                 <TableHead className="w-[5%] py-3.5"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                    Carregando clientes...
-                  </TableCell>
-                </TableRow>
+                Array.from({ length: ITEMS_PER_PAGE }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="py-3.5">
+                      <Skeleton className="h-4 w-3/4" />
+                    </TableCell>
+                    <TableCell className="py-3.5">
+                      <Skeleton className="h-4 w-1/2" />
+                    </TableCell>
+                    <TableCell className="py-3.5">
+                      <Skeleton className="h-4 w-1/2" />
+                    </TableCell>
+                    <TableCell className="py-3.5">
+                      <Skeleton className="h-4 w-2/3" />
+                    </TableCell>
+                    <TableCell className="py-3.5">
+                      <Skeleton className="h-4 w-8 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : patients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-12 text-muted-foreground"
+                  >
                     Nenhum cliente encontrado.
                   </TableCell>
                 </TableRow>
               ) : (
                 patients.map((patient) => (
-                  <TableRow key={patient.id} className="hover:bg-accent/50 transition-colors">
+                  <TableRow
+                    key={patient.id}
+                    className="hover:bg-accent/50 transition-colors"
+                  >
                     <TableCell className="font-medium text-foreground py-3.5 truncate">
-                      {patient.name}
+                      <Link
+                        href={`/clientes/${patient.id}`}
+                        className="hover:text-primary hover:underline transition-colors cursor-pointer"
+                      >
+                        {patient.name}
+                      </Link>
                     </TableCell>
                     <TableCell className="py-3.5 truncate">
                       <span className="flex items-center gap-1.5 text-xs font-medium truncate">
@@ -207,7 +311,7 @@ export default function ClientesPage() {
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDelete(patient.id)}
+                            onClick={() => setDeletingId(patient.id)}
                             className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -228,10 +332,12 @@ export default function ClientesPage() {
           <div className="text-xs text-muted-foreground">
             Exibindo{" "}
             <span className="font-medium text-foreground">
-              {patients.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}-
-              {Math.min(currentPage * ITEMS_PER_PAGE, totalPatients)}
+              {patients.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0}
+              -{Math.min(currentPage * ITEMS_PER_PAGE, totalPatients)}
             </span>{" "}
-            de <span className="font-medium text-foreground">{totalPatients}</span> clientes
+            de{" "}
+            <span className="font-medium text-foreground">{totalPatients}</span>{" "}
+            clientes
           </div>
 
           <div className="flex items-center gap-1">
@@ -250,7 +356,10 @@ export default function ClientesPage() {
               {getPaginationPages().map((page, idx) => {
                 if (typeof page === "string") {
                   return (
-                    <span key={idx} className="px-1.5 text-xs text-muted-foreground select-none">
+                    <span
+                      key={idx}
+                      className="px-1.5 text-xs text-muted-foreground select-none"
+                    >
                       {page}
                     </span>
                   );
@@ -286,7 +395,7 @@ export default function ClientesPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal de Criação/Edição */}
       <NewPatientModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -294,6 +403,32 @@ export default function ClientesPage() {
         initialData={selectedPatient}
         isSubmitting={isSubmitting}
       />
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Dialog
+        open={Boolean(deletingId)}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Excluir Cliente?
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Esta ação removerá este cliente do sistema. Esta ação não poderá
+              ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 pt-2">
+            <Button variant="outline" onClick={() => setDeletingId(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Excluir Definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
