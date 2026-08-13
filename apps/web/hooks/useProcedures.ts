@@ -1,25 +1,21 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  ApiProcedure,
+  Procedure,
+  CreateProcedureInput,
+  UpdateProcedureInput,
+  ProcedureSortOption,
+  ProcedureStats,
+} from "@/types/procedure";
 
-export interface Procedure {
-  id: string;
-  name: string;
-  durationMinutes: number;
-  price: number;
-  description?: string;
-  recommendedMonths?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface CreateProcedureInput {
-  name: string;
-  durationMinutes: number;
-  price: number;
-  description?: string;
-  recommendedMonths?: number;
-}
-
-export interface UpdateProcedureInput extends Partial<CreateProcedureInput> {}
+// Re-exporta os tipos para quem importa deste hook (retrocompatibilidade)
+export type {
+  Procedure,
+  CreateProcedureInput,
+  UpdateProcedureInput,
+  ProcedureSortOption,
+  ProcedureStats,
+};
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
 
@@ -28,13 +24,11 @@ export function useProcedures() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [sortBy, setSortBy] = useState<
-    "name" | "price-asc" | "price-desc" | "duration"
-  >("name");
+  const [sortBy, setSortBy] = useState<ProcedureSortOption>("name");
   const [error, setError] = useState<string | null>(null);
 
-  // Normaliza dados recebidos da API (garante que price seja número)
-  const normalizeProcedure = (item: any): Procedure => ({
+  // Normaliza dados recebidos da API (price pode vir como string do Prisma Decimal)
+  const normalizeProcedure = (item: ApiProcedure): Procedure => ({
     id: String(item.id),
     name: item.name,
     durationMinutes: Number(item.durationMinutes) || 0,
@@ -42,7 +36,7 @@ export function useProcedures() {
       typeof item.price === "string"
         ? parseFloat(item.price)
         : Number(item.price) || 0,
-    description: item.description || "",
+    description: item.description ?? "",
     recommendedMonths:
       item.recommendedMonths != null
         ? Number(item.recommendedMonths)
@@ -62,14 +56,15 @@ export function useProcedures() {
         throw new Error(`Servidor retornou status ${res.status}`);
       }
 
-      const data = await res.json();
+      const data: unknown = await res.json();
       if (Array.isArray(data)) {
-        setProcedures(data.map(normalizeProcedure));
+        setProcedures((data as ApiProcedure[]).map(normalizeProcedure));
       } else {
         setProcedures([]);
       }
-    } catch (err: any) {
-      console.error("Erro ao buscar procedimentos da API:", err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      console.error("Erro ao buscar procedimentos da API:", message);
       setError("Falha ao conectar com a API de procedimentos.");
       setProcedures([]);
     } finally {
@@ -83,7 +78,7 @@ export function useProcedures() {
 
   // Cria um novo procedimento
   const createProcedure = async (
-    input: CreateProcedureInput,
+    input: CreateProcedureInput
   ): Promise<boolean> => {
     setIsSubmitting(true);
     try {
@@ -94,14 +89,15 @@ export function useProcedures() {
       });
 
       if (res.ok) {
-        const created = await res.json();
+        const created: ApiProcedure = await res.json();
         setProcedures((prev) => [normalizeProcedure(created), ...prev]);
         return true;
       }
       throw new Error("Falha ao criar procedimento no servidor");
-    } catch (err: any) {
-      console.error("Erro ao criar procedimento:", err.message);
-      setError(err.message || "Erro ao salvar procedimento.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao salvar procedimento.";
+      console.error("Erro ao criar procedimento:", message);
+      setError(message);
       return false;
     } finally {
       setIsSubmitting(false);
@@ -111,7 +107,7 @@ export function useProcedures() {
   // Atualiza um procedimento existente
   const updateProcedure = async (
     id: string,
-    input: UpdateProcedureInput,
+    input: UpdateProcedureInput
   ): Promise<boolean> => {
     setIsSubmitting(true);
     try {
@@ -122,17 +118,18 @@ export function useProcedures() {
       });
 
       if (res.ok) {
-        const updated = await res.json();
+        const updated: ApiProcedure = await res.json();
         const normalized = normalizeProcedure(updated);
         setProcedures((prev) =>
-          prev.map((p) => (p.id === id ? normalized : p)),
+          prev.map((p) => (p.id === id ? normalized : p))
         );
         return true;
       }
       throw new Error("Falha ao atualizar procedimento no servidor");
-    } catch (err: any) {
-      console.error("Erro ao atualizar procedimento:", err.message);
-      setError(err.message || "Erro ao atualizar procedimento.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao atualizar procedimento.";
+      console.error("Erro ao atualizar procedimento:", message);
+      setError(message);
       return false;
     } finally {
       setIsSubmitting(false);
@@ -150,20 +147,21 @@ export function useProcedures() {
         return true;
       }
       throw new Error("Falha ao excluir procedimento no servidor");
-    } catch (err: any) {
-      console.error("Erro ao excluir procedimento:", err.message);
-      setError(err.message || "Erro ao remover procedimento.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao remover procedimento.";
+      console.error("Erro ao excluir procedimento:", message);
+      setError(message);
       return false;
     }
   };
 
   // Procedimentos filtrados e ordenados
   const filteredProcedures = useMemo(() => {
-    let list = procedures.filter(
+    const list = procedures.filter(
       (p) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.description &&
-          p.description.toLowerCase().includes(searchTerm.toLowerCase())),
+          p.description.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return list.sort((a, b) => {
@@ -175,7 +173,7 @@ export function useProcedures() {
   }, [procedures, searchTerm, sortBy]);
 
   // Estatísticas calculadas para a barra de métricas do SaaS
-  const stats = useMemo(() => {
+  const stats: ProcedureStats = useMemo(() => {
     const total = procedures.length;
     if (total === 0) {
       return { total: 0, averagePrice: 0, averageDuration: 0 };
@@ -183,7 +181,7 @@ export function useProcedures() {
     const totalPrice = procedures.reduce((acc, p) => acc + p.price, 0);
     const totalDuration = procedures.reduce(
       (acc, p) => acc + p.durationMinutes,
-      0,
+      0
     );
 
     return {

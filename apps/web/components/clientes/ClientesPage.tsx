@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { maskCpf, maskPhone } from "@/lib/masks";
 import {
   Users,
   Phone,
@@ -31,7 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { usePatients, Patient, CreatePatientInput } from "@/hooks/usePatient";
+import { usePatients } from "@/hooks/usePatient";
+import type { Patient, CreatePatientInput } from "@/types/patient";
 import { NewPatientModal } from "@/components/clientes/NewPatientModal";
 
 const ITEMS_PER_PAGE = 10;
@@ -176,13 +178,13 @@ export default function ClientesPage() {
                     <TableCell className="py-3.5 truncate">
                       <span className="flex items-center gap-1.5 text-xs font-medium truncate">
                         <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
-                        {patient.phone}
+                        {maskPhone(patient.phone)}
                       </span>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground py-3.5 truncate">
                       <span className="flex items-center gap-1 truncate">
                         <FileText className="w-3.5 h-3.5 shrink-0" />
-                        {patient.cpf || "-"}
+                        {patient.cpf ? maskCpf(patient.cpf) : "-"}
                       </span>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground py-3.5 truncate">

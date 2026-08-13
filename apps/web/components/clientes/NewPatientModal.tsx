@@ -13,25 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { UserPlus, Edit3, Loader2, MapPin } from "lucide-react";
-
-export interface Patient {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string | null;
-  birthDate?: string | null;
-  cpf?: string | null;
-  address?: string | null;
-}
-
-export interface CreatePatientInput {
-  name: string;
-  phone: string;
-  email?: string;
-  birthDate?: string;
-  cpf?: string;
-  address?: string;
-}
+import { maskCpf, maskPhone, maskCep } from "@/lib/masks";
+import { isValidCpf, isValidPhone } from "@/lib/validations/patient";
+import type { Patient, CreatePatientInput, PatientFormErrors } from "@/types/patient";
 
 interface PatientModalProps {
   isOpen: boolean;
@@ -39,11 +23,6 @@ interface PatientModalProps {
   onSave: (data: CreatePatientInput) => Promise<boolean | void> | void;
   initialData?: Patient | null;
   isSubmitting?: boolean;
-}
-
-interface FormErrors {
-  name?: string;
-  phone?: string;
 }
 
 export function PatientModal({
@@ -68,7 +47,7 @@ export function PatientModal({
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
 
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [errors, setErrors] = useState<PatientFormErrors>({});
 
   const isEditing = Boolean(initialData);
 
@@ -77,16 +56,14 @@ export function PatientModal({
       setErrors({});
       if (initialData) {
         setName(initialData.name ?? "");
-        setPhone(initialData.phone ?? "");
+        setPhone(maskPhone(initialData.phone ?? ""));
         setEmail(initialData.email ?? "");
-        setCpf(initialData.cpf ?? "");
+        setCpf(maskCpf(initialData.cpf ?? ""));
         setBirthDate(
           initialData.birthDate
             ? String(initialData.birthDate).slice(0, 10)
             : ""
         );
-
-        // Se já houver um endereço formatado, coloca na rua por padrão (ou reseta)
         setStreet(initialData.address ?? "");
         setZipCode("");
         setNumber("");
@@ -110,7 +87,7 @@ export function PatientModal({
   }, [isOpen, initialData]);
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
+    const newErrors: PatientFormErrors = {};
 
     if (!name.trim()) {
       newErrors.name = "Por favor, informe o nome do cliente.";
@@ -118,10 +95,32 @@ export function PatientModal({
 
     if (!phone.trim()) {
       newErrors.phone = "Por favor, informe o telefone/WhatsApp.";
+    } else if (!isValidPhone(phone)) {
+      newErrors.phone = "Telefone inválido. Use (00) 00000-0000.";
+    }
+
+    if (cpf.trim() && !isValidCpf(cpf)) {
+      newErrors.cpf = "CPF inválido.";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskPhone(e.target.value);
+    setPhone(masked);
+    if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+  };
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskCpf(e.target.value);
+    setCpf(masked);
+    if (errors.cpf) setErrors((prev) => ({ ...prev, cpf: undefined }));
+  };
+
+  const handleZipCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setZipCode(maskCep(e.target.value));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,11 +138,15 @@ export function PatientModal({
 
     const fullAddress = addressParts.join(", ");
 
+    // Remove máscaras antes de enviar para a API
+    const rawPhone = phone.replace(/\D/g, "");
+    const rawCpf = cpf.replace(/\D/g, "") || undefined;
+
     const payload: CreatePatientInput = {
       name: name.trim(),
-      phone: phone.trim(),
+      phone: rawPhone,
       email: email.trim() || undefined,
-      cpf: cpf.trim() || undefined,
+      cpf: rawCpf ? cpf.trim() : undefined, // envia com máscara para exibição, ou sem — escolha sua convenção
       birthDate: birthDate || undefined,
       address: fullAddress || undefined,
     };
@@ -194,20 +197,19 @@ export function PatientModal({
                 <Input
                   placeholder="(11) 99999-9999"
                   value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
-                  }}
+                  onChange={handlePhoneChange}
+                  inputMode="numeric"
                   className={`h-10 ${errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
               </FormField>
 
-              <FormField label="CPF">
+              <FormField label="CPF" error={errors.cpf}>
                 <Input
                   placeholder="000.000.000-00"
                   value={cpf}
-                  onChange={(e) => setCpf(e.target.value)}
-                  className="h-10"
+                  onChange={handleCpfChange}
+                  inputMode="numeric"
+                  className={`h-10 ${errors.cpf ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
               </FormField>
             </div>
@@ -247,7 +249,8 @@ export function PatientModal({
                 <Input
                   placeholder="00000-000"
                   value={zipCode}
-                  onChange={(e) => setZipCode(e.target.value)}
+                  onChange={handleZipCodeChange}
+                  inputMode="numeric"
                   className="h-10"
                 />
               </FormField>

@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import type { CreateAppointmentInput } from '@/types/appointment';
+import type { DurationUnit } from '@/types/procedure';
 
 interface NewAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (appointment: any) => void;
+  onSave?: (appointment: CreateAppointmentInput) => void;
 }
 
 export function NewAppointmentModal({ isOpen, onClose, onSave }: NewAppointmentModalProps) {
@@ -17,7 +19,7 @@ export function NewAppointmentModal({ isOpen, onClose, onSave }: NewAppointmentM
   
   // Duração Flexível (Número + min/h)
   const [durationValue, setDurationValue] = useState('60');
-  const [durationUnit, setDurationUnit] = useState<'minutes' | 'hours'>('minutes');
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>('minutes');
   
   const [notes, setNotes] = useState('');
 
