@@ -219,20 +219,20 @@ export default function ClientesPage() {
         <div className="overflow-x-auto">
           <Table className="w-full table-fixed">
             <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead className="w-[28%] font-semibold py-3.5">
+              <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                <TableHead className="w-[28%] font-semibold text-[11px] tracking-wider uppercase text-slate-500 py-3">
                   Nome
                 </TableHead>
-                <TableHead className="w-[22%] font-semibold py-3.5">
+                <TableHead className="w-[22%] font-semibold text-[11px] tracking-wider uppercase text-slate-500 py-3">
                   Telefone / WhatsApp
                 </TableHead>
-                <TableHead className="w-[20%] font-semibold py-3.5">
+                <TableHead className="w-[20%] font-semibold text-[11px] tracking-wider uppercase text-slate-500 py-3">
                   CPF
                 </TableHead>
-                <TableHead className="w-[25%] font-semibold py-3.5">
+                <TableHead className="w-[25%] font-semibold text-[11px] tracking-wider uppercase text-slate-500 py-3">
                   E-mail
                 </TableHead>
-                <TableHead className="w-[5%] py-3.5"></TableHead>
+                <TableHead className="w-[5%] py-3"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -271,12 +271,15 @@ export default function ClientesPage() {
                     key={patient.id}
                     className="hover:bg-accent/50 transition-colors"
                   >
-                    <TableCell className="font-medium text-foreground py-3.5 truncate">
+                    <TableCell className="font-medium text-foreground py-2.5 truncate">
                       <Link
                         href={`/clientes/${patient.id}`}
-                        className="hover:text-primary hover:underline transition-colors cursor-pointer"
+                        className="flex items-center gap-3 hover:text-rose-600 transition-colors cursor-pointer group"
                       >
-                        {patient.name}
+                        <div className="w-7 h-7 rounded-full bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-rose-100 transition-colors">
+                          {patient.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <span className="truncate group-hover:underline">{patient.name}</span>
                       </Link>
                     </TableCell>
                     <TableCell className="py-3.5 truncate">
@@ -288,13 +291,21 @@ export default function ClientesPage() {
                     <TableCell className="text-xs text-muted-foreground py-3.5 truncate">
                       <span className="flex items-center gap-1 truncate">
                         <FileText className="w-3.5 h-3.5 shrink-0" />
-                        {patient.cpf ? maskCpf(patient.cpf) : "-"}
+                        {patient.cpf ? (
+                          maskCpf(patient.cpf)
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Não informado</span>
+                        )}
                       </span>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground py-3.5 truncate">
                       <span className="flex items-center gap-1 truncate">
                         <Mail className="w-3.5 h-3.5 shrink-0" />
-                        {patient.email || "-"}
+                        {patient.email ? (
+                           patient.email
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">Não informado</span>
+                        )}
                       </span>
                     </TableCell>
                     <TableCell className="text-right py-3.5">

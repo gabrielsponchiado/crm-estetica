@@ -60,7 +60,7 @@ const statusStyles = {
     "bg-amber-50/80 border-amber-300 text-amber-800 hover:bg-amber-100",
   CONFIRMED:
     "bg-emerald-50/80 border-emerald-300 text-emerald-800 hover:bg-emerald-100",
-  IN_PROGRESS: "bg-blue-50/80 border-blue-300 text-blue-800 hover:bg-blue-100",
+  IN_PROGRESS: "bg-rose-50/80 border-rose-300 text-rose-800 hover:bg-rose-100",
   COMPLETED: "bg-slate-100 border-slate-300 text-slate-700 opacity-75",
   CANCELLED: "bg-red-50 border-red-300 text-red-700 line-through opacity-60",
 };
@@ -151,7 +151,7 @@ export function AgendaPage() {
 
         <button
           onClick={() => setIsNewAppointmentOpen(true)}
-          className="h-10 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-medium text-xs sm:text-sm rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer shrink-0"
+          className="h-10 px-4 bg-rose-600 hover:bg-rose-700 active:scale-[0.98] text-white font-medium text-xs sm:text-sm rounded-xl transition shadow-md shadow-rose-200/50 flex items-center gap-2 cursor-pointer shrink-0"
         >
           <span className="text-base font-bold">+</span> Novo Agendamento
         </button>
@@ -193,7 +193,7 @@ export function AgendaPage() {
               onClick={() => setViewMode("day")}
               className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === "day"
-                  ? "bg-white text-blue-600 shadow-xs font-semibold"
+                  ? "bg-white text-rose-600 shadow-xs font-semibold"
                   : "hover:text-slate-900"
               }`}
             >
@@ -203,7 +203,7 @@ export function AgendaPage() {
               onClick={() => setViewMode("week")}
               className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === "week"
-                  ? "bg-white text-blue-600 shadow-xs font-semibold"
+                  ? "bg-white text-rose-600 shadow-xs font-semibold"
                   : "hover:text-slate-900"
               }`}
             >
@@ -213,7 +213,7 @@ export function AgendaPage() {
               onClick={() => setViewMode("month")}
               className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewMode === "month"
-                  ? "bg-white text-blue-600 shadow-xs font-semibold"
+                  ? "bg-white text-rose-600 shadow-xs font-semibold"
                   : "hover:text-slate-900"
               }`}
             >
@@ -232,11 +232,11 @@ export function AgendaPage() {
             Confirmado
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Em
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Em
             Atendimento
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>{" "}
+            <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>{" "}
             Cancelado
           </span>
         </div>
@@ -322,7 +322,7 @@ export function AgendaPage() {
                     key={day.toString()}
                     className={`py-1.5 rounded-xl flex flex-col items-center justify-center capitalize ${
                       isToday
-                        ? "bg-blue-50 text-blue-700 font-bold"
+                        ? "bg-rose-50 text-rose-700 font-bold border border-rose-100"
                         : "text-slate-600 font-medium"
                     }`}
                   >
@@ -350,8 +350,8 @@ export function AgendaPage() {
                     key={dayStr}
                     className={`rounded-xl border p-2 flex flex-col gap-2 transition ${
                       isPast
-                        ? "bg-slate-50/50 opacity-60 border-slate-100"
-                        : "bg-slate-50/30 border-slate-100"
+                        ? "bg-slate-50/80 opacity-70 border-slate-200"
+                        : "bg-white border-slate-200 shadow-sm hover:border-rose-300"
                     }`}
                   >
                     {dayAppointments.length > 0
@@ -424,21 +424,21 @@ export function AgendaPage() {
                     }}
                     className={`p-2 rounded-xl border flex flex-col justify-between transition ${
                       !isCurrentMonth
-                        ? "opacity-30 bg-slate-50/10"
-                        : "bg-slate-50/20"
-                    } ${isPast ? "bg-slate-100/40 text-slate-400" : "cursor-pointer hover:border-blue-400"} ${
+                        ? "opacity-50 bg-slate-50/50"
+                        : "bg-white"
+                    } ${isPast ? "bg-slate-50/40 text-slate-400 border-slate-200" : "cursor-pointer hover:border-rose-300 hover:shadow-sm border-slate-200"} ${
                       isToday
-                        ? "bg-blue-50/40 border-blue-300"
-                        : "border-slate-100"
+                        ? "border-rose-400 shadow-sm"
+                        : ""
                     }`}
                   >
                     <span
-                      className={`text-xs font-semibold ${
+                      className={`text-xs font-semibold h-7 w-7 flex items-center justify-center rounded-full ${
                         isToday
-                          ? "text-blue-600 font-bold"
+                          ? "bg-rose-600 text-white shadow-sm"
                           : isPast
                             ? "text-slate-400"
-                            : "text-slate-700"
+                            : "text-slate-800"
                       }`}
                     >
                       {format(day, "d")}

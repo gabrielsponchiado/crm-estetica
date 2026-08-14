@@ -45,8 +45,8 @@ function NavLink({
         'group relative flex h-11 items-center rounded-xl transition-colors duration-150 select-none overflow-hidden',
         open ? 'px-3 justify-start gap-3' : 'px-0 justify-center',
         isActive
-          ? 'bg-neutral-900 text-white shadow-sm'
-          : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900'
+          ? 'bg-rose-600 text-white shadow-md shadow-rose-200/50'
+          : 'text-slate-500 hover:bg-rose-50 hover:text-rose-700'
       )}
     >
 
@@ -56,7 +56,7 @@ function NavLink({
           'h-5 w-5 shrink-0 transition-colors duration-150',
           isActive
             ? 'text-white'
-            : 'text-neutral-400 group-hover:text-neutral-700'
+            : 'text-slate-400 group-hover:text-rose-600'
         )}
       />
 
@@ -130,7 +130,7 @@ export default function AppLayout({
 
           {/* Perfil / Avatar */}
           <div className={cn('mt-2 flex items-center rounded-xl py-2 transition-all', open ? 'px-1 gap-3 justify-start' : 'px-0 justify-center')}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-sm font-semibold text-white">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-600 shadow-sm shadow-rose-200 text-sm font-semibold text-white">
               N
             </div>
             {open && (

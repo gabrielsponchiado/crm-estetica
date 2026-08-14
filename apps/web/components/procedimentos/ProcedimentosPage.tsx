@@ -171,11 +171,11 @@ export function ProcedimentosPage() {
 
       {/* Cards de Métricas SaaS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-6 bg-card/60 backdrop-blur-xs flex flex-col items-center justify-center text-center gap-2">
-          <div className="p-3 rounded-full bg-primary/10 text-primary shrink-0 mb-1">
+        <Card className="p-6 bg-white border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 group">
+          <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform duration-300 mb-1">
             <Layers className="w-5 h-5" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
             Total de Procedimentos
           </p>
           <h3 className="text-2xl font-bold text-foreground tracking-tight">
@@ -183,11 +183,11 @@ export function ProcedimentosPage() {
           </h3>
         </Card>
 
-        <Card className="p-6 bg-card/60 backdrop-blur-xs flex flex-col items-center justify-center text-center gap-2">
-          <div className="p-3 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mb-1">
+        <Card className="p-6 bg-white border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 group">
+          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-1">
             <DollarSign className="w-5 h-5" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
             Preço Médio por Serviço
           </p>
           <h3 className="text-2xl font-bold text-foreground tracking-tight">
@@ -200,12 +200,12 @@ export function ProcedimentosPage() {
           </h3>
         </Card>
 
-        <Card className="p-6 bg-card/60 backdrop-blur-xs flex flex-col items-center justify-center text-center gap-2">
-          <div className="p-3 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0 mb-1">
+        <Card className="p-6 bg-white border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 group">
+          <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform duration-300 mb-1">
             <TrendingUp className="w-5 h-5" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">
-            Duração Média em Clínica
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
+            Duração Média
           </p>
           <h3 className="text-2xl font-bold text-foreground tracking-tight">
             {loading ? "..." : formatDuration(stats.averageDuration)}
@@ -269,11 +269,11 @@ export function ProcedimentosPage() {
           {procedures.map((proc) => (
             <Card
               key={proc.id}
-              className="group flex flex-col justify-between hover:border-primary/40 hover:shadow-md transition-all duration-200"
+              className="group flex flex-col justify-between bg-white border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-lg hover:border-rose-200 transition-all duration-300"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                  <CardTitle className="text-base font-semibold text-slate-800 line-clamp-1 group-hover:text-rose-600 transition-colors">
                     {proc.name}
                   </CardTitle>
 

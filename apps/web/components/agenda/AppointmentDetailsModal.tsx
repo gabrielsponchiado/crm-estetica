@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
 interface Appointment {
   id: string;
   patientName: string;
@@ -19,64 +29,82 @@ export function AppointmentDetailsModal({
   appointment,
   onClose,
 }: AppointmentDetailsModalProps) {
-  if (!appointment) return null;
+  
+  const statusLabels = {
+    SCHEDULED: "Agendado",
+    CONFIRMED: "Confirmado",
+    IN_PROGRESS: "Em Atendimento",
+    COMPLETED: "Concluído",
+    CANCELLED: "Cancelado",
+  };
+
+  const statusColors = {
+    SCHEDULED: "bg-amber-100 text-amber-800",
+    CONFIRMED: "bg-emerald-100 text-emerald-800",
+    IN_PROGRESS: "bg-rose-100 text-rose-800",
+    COMPLETED: "bg-slate-100 text-slate-800",
+    CANCELLED: "bg-red-100 text-red-800",
+  };
+
+  // Trata o telefone para remover parênteses, traços e espaços antes de enviar
+  const handleOpenWhatsApp = () => {
+    if (!appointment?.phone) return;
+    const cleanPhone = appointment.phone.replace(/\D/g, '');
+    window.open(`https://wa.me/55${cleanPhone}`, '_blank');
+  };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900">{appointment.patientName}</h2>
-            <p className="text-xs text-slate-500">Detalhes do atendimento</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
-          >
-            ✕
-          </button>
-        </div>
+    <Dialog open={!!appointment} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden">
+        {appointment && (
+          <>
+            <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
+              <DialogTitle className="text-xl font-bold">{appointment.patientName}</DialogTitle>
+              <DialogDescription>
+                Detalhes do atendimento
+              </DialogDescription>
+            </DialogHeader>
 
-        <div className="p-5 flex flex-col gap-4 text-xs">
-          <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <div>
-              <span className="text-slate-400 font-medium block">Horário</span>
-              <span className="text-slate-900 font-bold text-sm">{appointment.startTime} ({appointment.durationMinutes} min)</span>
+            <div className="px-6 py-4 flex flex-col gap-5 text-sm">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="flex flex-col gap-1">
+                  <span className="text-slate-500 font-medium text-xs">Horário</span>
+                  <span className="text-slate-900 font-bold">{appointment.startTime} ({appointment.durationMinutes} min)</span>
+                </div>
+                <div className="flex flex-col gap-1 items-start">
+                  <span className="text-slate-500 font-medium text-xs">Status</span>
+                  <Badge variant="secondary" className={`${statusColors[appointment.status]} font-bold`}>
+                    {statusLabels[appointment.status]}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-slate-500 font-medium text-xs">Procedimento</span>
+                <span className="text-slate-900 font-semibold">{appointment.procedure}</span>
+              </div>
+
+              <div className="pt-2 flex flex-col gap-3">
+                <Button 
+                  onClick={handleOpenWhatsApp}
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm font-semibold cursor-pointer"
+                >
+                  💬 Enviar Lembrete no WhatsApp
+                </Button>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="font-medium cursor-pointer">
+                    Editar Consulta
+                  </Button>
+                  <Button variant="destructive" className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 font-medium shadow-none cursor-pointer">
+                    Cancelar Horário
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div>
-              <span className="text-slate-400 font-medium block">Status</span>
-              <span className="text-emerald-700 font-bold text-xs bg-emerald-100 px-2 py-0.5 rounded-md inline-block mt-0.5">
-                {appointment.status}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <span className="text-slate-400 font-medium block">Procedimento</span>
-            <span className="text-slate-800 font-semibold text-sm">{appointment.procedure}</span>
-          </div>
-
-          <div className="pt-2 flex flex-col gap-2">
-            <a
-              href={`https://wa.me/55${appointment.phone}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full h-10 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition"
-            >
-              💬 Enviar Lembrete no WhatsApp
-            </a>
-
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <button className="h-9 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition cursor-pointer">
-                Editar Consulta
-              </button>
-              <button className="h-9 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-xl transition cursor-pointer">
-                Cancelar Horário
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
