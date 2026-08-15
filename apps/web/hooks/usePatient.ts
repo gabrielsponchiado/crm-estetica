@@ -7,8 +7,13 @@ import {
   PaginatedPatientsResponse,
 } from "@/types/patient";
 
-// Re-exporta os tipos para quem importa deste hook (retrocompatibilidade)
-export type { ApiPatient, Patient, CreatePatientInput, UpdatePatientInput, PaginatedPatientsResponse };
+export type {
+  ApiPatient,
+  Patient,
+  CreatePatientInput,
+  UpdatePatientInput,
+  PaginatedPatientsResponse,
+};
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
 
@@ -22,7 +27,6 @@ export function usePatients(itemsPerPage = 10) {
   const [totalPatients, setTotalPatients] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Normalização tipada sem usar `any`
   const normalizePatient = (item: ApiPatient): Patient => ({
     id: String(item.id),
     name: item.name,
@@ -69,7 +73,9 @@ export function usePatients(itemsPerPage = 10) {
       }
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : "Erro desconhecido ao carregar clientes.";
+        err instanceof Error
+          ? err.message
+          : "Erro desconhecido ao carregar clientes.";
       console.error("Erro na requisição da API:", errorMessage);
       setError("Não foi possível conectar ao servidor.");
     } finally {
@@ -87,7 +93,9 @@ export function usePatients(itemsPerPage = 10) {
   };
 
   // Criar Cliente
-  const createPatient = async (input: CreatePatientInput): Promise<boolean> => {
+  const createPatient = async (
+    input: CreatePatientInput,
+  ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/patients`, {
@@ -98,14 +106,20 @@ export function usePatients(itemsPerPage = 10) {
 
       if (res.ok) {
         await fetchPatients();
-        return true;
+        return { success: true };
       }
-      return false;
+
+      const errorData = await res.json().catch(() => null);
+      const errorMsg = errorData?.message || "Erro ao criar cliente.";
+      return {
+        success: false,
+        error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
+      };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao criar cliente.";
       console.error("Erro ao criar cliente:", errorMessage);
-      return false;
+      return { success: false, error: errorMessage };
     } finally {
       setIsSubmitting(false);
     }
@@ -114,8 +128,8 @@ export function usePatients(itemsPerPage = 10) {
   // Editar Cliente
   const updatePatient = async (
     id: string,
-    input: UpdatePatientInput
-  ): Promise<boolean> => {
+    input: UpdatePatientInput,
+  ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/patients/${id}`, {
@@ -126,14 +140,20 @@ export function usePatients(itemsPerPage = 10) {
 
       if (res.ok) {
         await fetchPatients();
-        return true;
+        return { success: true };
       }
-      return false;
+
+      const errorData = await res.json().catch(() => null);
+      const errorMsg = errorData?.message || "Erro ao atualizar cliente.";
+      return {
+        success: false,
+        error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
+      };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao atualizar cliente.";
       console.error("Erro ao atualizar cliente:", errorMessage);
-      return false;
+      return { success: false, error: errorMessage };
     } finally {
       setIsSubmitting(false);
     }

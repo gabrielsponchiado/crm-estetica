@@ -15,12 +15,20 @@ import { FormField } from "@/components/ui/form-field";
 import { UserPlus, Edit3, Loader2, MapPin } from "lucide-react";
 import { maskCpf, maskPhone, maskCep } from "@/lib/masks";
 import { isValidCpf, isValidPhone } from "@/lib/validations/patient";
-import type { Patient, CreatePatientInput, PatientFormErrors } from "@/types/patient";
+import type {
+  Patient,
+  CreatePatientInput,
+  PatientFormErrors,
+} from "@/types/patient";
 
 interface PatientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CreatePatientInput) => Promise<boolean | void> | void;
+  onSave: (
+    data: CreatePatientInput,
+  ) =>
+    | Promise<{ success: boolean; error?: string }>
+    | { success: boolean; error?: string };
   initialData?: Patient | null;
   isSubmitting?: boolean;
 }
@@ -32,14 +40,11 @@ export function PatientModal({
   initialData,
   isSubmitting = false,
 }: PatientModalProps) {
-  // Dados Pessoais
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
-
-  // Endereço Detalhado
   const [zipCode, setZipCode] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -62,7 +67,7 @@ export function PatientModal({
         setBirthDate(
           initialData.birthDate
             ? String(initialData.birthDate).slice(0, 10)
-            : ""
+            : "",
         );
         setStreet(initialData.address ?? "");
         setZipCode("");
@@ -132,7 +137,9 @@ export function PatientModal({
       street.trim(),
       number.trim() ? `nº ${number.trim()}` : "",
       neighborhood.trim(),
-      city.trim() && state.trim() ? `${city.trim()} - ${state.trim()}` : city.trim() || state.trim(),
+      city.trim() && state.trim()
+        ? `${city.trim()} - ${state.trim()}`
+        : city.trim() || state.trim(),
       zipCode.trim() ? `CEP: ${zipCode.trim()}` : "",
     ].filter(Boolean);
 
@@ -140,20 +147,33 @@ export function PatientModal({
 
     // Remove máscaras antes de enviar para a API
     const rawPhone = phone.replace(/\D/g, "");
-    const rawCpf = cpf.replace(/\D/g, "") || undefined;
+    const rawCpf = cpf.replace(/\D/g, "");
 
     const payload: CreatePatientInput = {
       name: name.trim(),
       phone: rawPhone,
-      email: email.trim() || undefined,
-      cpf: rawCpf ? cpf.trim() : undefined, // envia com máscara para exibição, ou sem — escolha sua convenção
-      birthDate: birthDate || undefined,
-      address: fullAddress || undefined,
+      ...(email.trim() ? { email: email.trim() } : {}),
+      ...(rawCpf ? { cpf: rawCpf } : {}),
+      ...(birthDate ? { birthDate } : {}),
+      ...(fullAddress ? { address: fullAddress } : {}),
     };
 
-    const success = await onSave(payload);
-    if (success) {
+    const result = await onSave(payload);
+    if (result.success) {
       onClose();
+    } else if (
+      (result.error && result.error.toLowerCase().includes("cpf")) ||
+      result.error?.toLowerCase().includes("e-mail")
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        cpf: result.error?.toLowerCase().includes("cpf")
+          ? result.error
+          : undefined,
+        email: result.error?.toLowerCase().includes("e-mail")
+          ? result.error
+          : undefined,
+      }));
     }
   };
 
@@ -168,7 +188,8 @@ export function PatientModal({
               </>
             ) : (
               <>
-                <UserPlus className="w-5 h-5 text-primary" /> Cadastrar Novo Cliente
+                <UserPlus className="w-5 h-5 text-primary" /> Cadastrar Novo
+                Cliente
               </>
             )}
           </DialogTitle>
@@ -186,14 +207,19 @@ export function PatientModal({
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                  if (errors.name)
+                    setErrors((prev) => ({ ...prev, name: undefined }));
                 }}
                 className={`h-10 ${errors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
             </FormField>
 
             <div className="grid grid-cols-2 gap-3 items-start">
-              <FormField label="Telefone / WhatsApp" required error={errors.phone}>
+              <FormField
+                label="Telefone / WhatsApp"
+                required
+                error={errors.phone}
+              >
                 <Input
                   placeholder="(11) 99999-9999"
                   value={phone}
@@ -238,10 +264,10 @@ export function PatientModal({
 
           <hr className="my-2 border-border" />
 
-          {/* Seção: Endereço */}
           <div className="space-y-3">
             <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-primary" /> Endereço (Opcional)
+              <MapPin className="w-3.5 h-3.5 text-primary" /> Endereço
+              (Opcional)
             </h3>
 
             <div className="grid grid-cols-3 gap-3">
