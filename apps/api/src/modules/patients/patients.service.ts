@@ -1,24 +1,32 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma } from '@prisma/client'; // Importação da tipagem do Prisma
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class PatientsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreatePatientsDto) {
-    return this.prisma.patient.create({
-      data: {
-        name: dto.name,
-        phone: dto.phone,
-        cpf: dto.cpf,
-        email: dto.email,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
-        address: dto.address,
-      },
-    });
+    try {
+      return await this.prisma.patient.create({
+        data: {
+          name: dto.name,
+          phone: dto.phone,
+          cpf: dto.cpf,
+          email: dto.email,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : null,
+          address: dto.address,
+        },
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('CPF ou E-mail já cadastrado.');
+      }
+      throw error;
+    }
   }
 
   async findAll(page: number = 1, limit: number = 10, search?: string) {
@@ -80,13 +88,20 @@ export class PatientsService {
   async update(id: string, dto: UpdatePatientsDto) {
     await this.findOne(id);
 
-    return this.prisma.patient.update({
-      where: { id },
-      data: {
-        ...dto,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-      },
-    });
+    try {
+      return await this.prisma.patient.update({
+        where: { id },
+        data: {
+          ...dto,
+          birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+        },
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('CPF ou E-mail já cadastrado.');
+      }
+      throw error;
+    }
   }
 
   async remove(id: string) {
