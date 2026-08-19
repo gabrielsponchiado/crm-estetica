@@ -32,7 +32,6 @@ export class PatientsService {
   async findAll(page: number = 1, limit: number = 10, search?: string) {
     const skip = (page - 1) * limit;
 
-    // Tipagem oficial sem usar 'any'
     const where: Prisma.PatientWhereInput = {
       deletedAt: null,
     };
