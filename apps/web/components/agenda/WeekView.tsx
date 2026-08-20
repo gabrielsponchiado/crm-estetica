@@ -2,19 +2,25 @@
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Plus } from "lucide-react";
 
-import type { Appointment } from "hooks/useAppointments";
+import type { Appointment } from "@/types/appointment";
+import { statusConfig } from "./appointment-status";
 
 interface WeekViewProps {
   days: Date[];
   getAppointmentsForDay: (date: Date) => Appointment[];
   isToday: (date: Date) => boolean;
+  onSelectAppointment: (appointment: Appointment) => void;
+  onNewAppointment: (date: Date) => void;
 }
 
 export function WeekView({
   days,
   getAppointmentsForDay,
   isToday,
+  onSelectAppointment,
+  onNewAppointment,
 }: WeekViewProps) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -23,15 +29,10 @@ export function WeekView({
           const appointments = getAppointmentsForDay(day);
 
           return (
-            <div
-              key={day.toISOString()}
-              className="min-h-[600px] border-r last:border-r-0"
-            >
+            <div key={day.toISOString()} className="min-h-[600px] border-r last:border-r-0">
               <div className="border-b p-3 text-center">
                 <p className="text-xs font-medium uppercase text-muted-foreground">
-                  {format(day, "EEE", {
-                    locale: ptBR,
-                  })}
+                  {format(day, "EEE", { locale: ptBR })}
                 </p>
 
                 <div
@@ -44,24 +45,30 @@ export function WeekView({
               </div>
 
               <div className="space-y-2 p-2">
-                {appointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    className="rounded-lg border bg-primary/5 p-2"
-                  >
-                    <p className="text-xs font-semibold text-primary">
-                      {appointment.startTime}
-                    </p>
+                {appointments.map((appointment) => {
+                  const config = statusConfig[appointment.status];
 
-                    <p className="mt-1 truncate text-sm font-medium">
-                      {appointment.patientName}
-                    </p>
+                  return (
+                    <button
+                      key={appointment.id}
+                      type="button"
+                      onClick={() => onSelectAppointment(appointment)}
+                      className={`w-full rounded-lg border-l-2 ${config.border} ${config.bg} ${config.hover} p-2 text-left`}
+                    >
+                      <p className={`text-xs font-semibold ${config.text}`}>{appointment.startTime}</p>
+                      <p className="mt-1 truncate text-sm font-medium">{appointment.patientName}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">{appointment.procedure}</p>
+                    </button>
+                  );
+                })}
 
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {appointment.procedure}
-                    </p>
-                  </div>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => onNewAppointment(day)}
+                  className="flex w-full items-center justify-center rounded-lg border border-dashed border-transparent py-2 text-muted-foreground/40 transition hover:border-border hover:text-muted-foreground"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
             </div>
           );

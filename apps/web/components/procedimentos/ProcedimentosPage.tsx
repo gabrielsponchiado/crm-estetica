@@ -148,26 +148,27 @@ export function ProcedimentosPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-            Catálogo de Procedimentos
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie todos os tratamentos estéticos, durações, preços e
-            frequências de retorno.
-          </p>
+      <header className="flex shrink-0 items-end justify-between gap-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <Sparkles className="h-[18px] w-[18px] text-primary" />
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Procedimentos</h1>
+            <p className="text-sm text-muted-foreground">
+              Gerencie os tratamentos estéticos, durações e preços.
+            </p>
+          </div>
         </div>
 
         <Button
           onClick={handleOpenCreateModal}
-          size="default"
-          className="gap-2 shadow-sm font-semibold"
+          className="h-10 gap-2 rounded-lg px-4 shadow-sm font-semibold"
         >
           <Plus className="w-4 h-4" /> Novo Procedimento
         </Button>
-      </div>
+      </header>
 
       {/* Cards de Métricas SaaS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

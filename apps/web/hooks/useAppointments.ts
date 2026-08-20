@@ -1,145 +1,214 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { isSameDay, parseISO } from "date-fns";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { format, isSameDay, parseISO } from "date-fns";
 
-import type { CreateAppointmentInput } from "@/types/appointment";
+import type {
+  ApiAppointment,
+  Appointment,
+  AppointmentStatus,
+  CreateAppointmentInput,
+  UpdateAppointmentInput,
+} from "@/types/appointment";
 
-export type AppointmentStatus =
-  "scheduled" | "confirmed" | "in_progress" | "completed" | "cancelled";
+export type { Appointment, AppointmentStatus, CreateAppointmentInput, UpdateAppointmentInput };
 
-export interface Appointment {
-  id: string;
-  patientName: string;
-  phone: string;
-  procedure: string;
-  date: string;
-  startTime: string;
-  durationMinutes: number;
-  notes?: string;
-  status: AppointmentStatus;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
+
+interface UseAppointmentsOptions {
+  startDate?: Date;
+  endDate?: Date;
 }
 
-const initialAppointments: Appointment[] = [
-  {
-    id: "1",
-    patientName: "Maria Silva",
-    phone: "(11) 99999-1111",
-    procedure: "Toxina Botulínica (Botox)",
-    date: "2026-08-15",
-    startTime: "09:00",
-    durationMinutes: 60,
-    notes: "",
-    status: "confirmed",
-  },
-  {
-    id: "2",
-    patientName: "Ana Carolina",
-    phone: "(11) 99999-2222",
-    procedure: "Preenchimento Labial",
-    date: "2026-08-15",
-    startTime: "10:30",
-    durationMinutes: 90,
-    notes: "",
-    status: "scheduled",
-  },
-  {
-    id: "3",
-    patientName: "Juliana Costa",
-    phone: "(11) 99999-3333",
-    procedure: "Limpeza de Pele Profunda",
-    date: "2026-08-16",
-    startTime: "14:00",
-    durationMinutes: 60,
-    notes: "",
-    status: "confirmed",
-  },
-];
+function normalizeAppointment(item: ApiAppointment): Appointment {
+  const scheduled = new Date(item.scheduledAt);
 
-export function useAppointments() {
-  const [appointments, setAppointments] =
-    useState<Appointment[]>(initialAppointments);
-
-  const getAppointmentsForDay = (date: Date) => {
-    return appointments.filter((appointment) =>
-      isSameDay(parseISO(appointment.date), date),
-    );
+  return {
+    id: item.id,
+    patientId: item.patientId,
+    patientName: item.patient?.name ?? "Paciente removido",
+    phone: item.patient?.phone ?? "",
+    procedureId: item.procedureId ?? "",
+    procedure: item.procedure?.name ?? "Procedimento removido",
+    date: format(scheduled, "yyyy-MM-dd"),
+    startTime: format(scheduled, "HH:mm"),
+    durationMinutes: Number(item.durationMinutes) || 0,
+    notes: item.notes ?? undefined,
+    status: item.status,
   };
+}
+
+// Combina data (yyyy-MM-dd) + horário (HH:mm) locais num ISO string,
+// no formato que CreateAgendaDto/UpdateAgendaDto esperam em `date`.
+function toScheduledAtISO(date: string, startTime: string) {
+  return new Date(`${date}T${startTime}:00`).toISOString();
+}
+
+export function useAppointments({ startDate, endDate }: UseAppointmentsOptions = {}) {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Chaves estáveis pra não recriar a função de fetch a cada render
+  // só porque o objeto Date mudou de referência.
+  const startKey = startDate ? startDate.toISOString() : undefined;
+  const endKey = endDate ? endDate.toISOString() : undefined;
+
+  const fetchAppointments = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (startKey) params.append("startDate", startKey);
+      if (endKey) params.append("endDate", endKey);
+
+      const query = params.toString();
+      const res = await fetch(`${API_URL}/agenda${query ? `?${query}` : ""}`);
+
+      if (!res.ok) {
+        throw new Error(`Servidor retornou status ${res.status}`);
+      }
+
+      const data: ApiAppointment[] = await res.json();
+      setAppointments(data.map(normalizeAppointment));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Erro desconhecido ao carregar a agenda.";
+      console.error("Erro ao buscar agendamentos:", message);
+      setError("Não foi possível carregar a agenda.");
+    } finally {
+      setLoading(false);
+    }
+  }, [startKey, endKey]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  const getAppointmentsForDay = useCallback(
+    (date: Date) =>
+      appointments
+        .filter((appointment) => isSameDay(parseISO(appointment.date), date))
+        .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    [appointments],
+  );
 
   const stats = useMemo(() => {
     const total = appointments.length;
+    const confirmed = appointments.filter((a) => a.status === "CONFIRMED").length;
+    const scheduled = appointments.filter((a) => a.status === "SCHEDULED").length;
+    const inProgress = appointments.filter((a) => a.status === "IN_PROGRESS").length;
+    const completed = appointments.filter((a) => a.status === "COMPLETED").length;
+    const cancelled = appointments.filter((a) => a.status === "CANCELED").length;
 
-    const confirmed = appointments.filter(
-      (appointment) => appointment.status === "confirmed",
-    ).length;
-
-    const scheduled = appointments.filter(
-      (appointment) => appointment.status === "scheduled",
-    ).length;
-
-    const inProgress = appointments.filter(
-      (appointment) => appointment.status === "in_progress",
-    ).length;
-
-    const completed = appointments.filter(
-      (appointment) => appointment.status === "completed",
-    ).length;
-
-    const cancelled = appointments.filter(
-      (appointment) => appointment.status === "cancelled",
-    ).length;
-
-    return {
-      total,
-      confirmed,
-      scheduled,
-      inProgress,
-      completed,
-      cancelled,
-    };
+    return { total, confirmed, scheduled, inProgress, completed, cancelled };
   }, [appointments]);
 
-  const createAppointment = (data: CreateAppointmentInput) => {
-    const newAppointment: Appointment = {
-      id: crypto.randomUUID(),
-      patientName: data.patientName,
-      phone: data.phone,
-      procedure: data.procedure,
-      date: data.date,
-      startTime: data.startTime,
-      durationMinutes: data.durationMinutes,
-      notes: data.notes,
-      status: "scheduled",
-    };
+  const createAppointment = async (
+    input: CreateAppointmentInput,
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_URL}/agenda`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: input.patientId,
+          procedureId: input.procedureId,
+          date: toScheduledAtISO(input.date, input.startTime),
+          duration: input.durationMinutes,
+          notes: input.notes,
+        }),
+      });
 
-    setAppointments((previous) => [...previous, newAppointment]);
+      if (res.ok) {
+        await fetchAppointments();
+        return { success: true };
+      }
+
+      const errorData = await res.json().catch(() => null);
+      const errorMsg = errorData?.message || "Erro ao criar agendamento.";
+      return { success: false, error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao criar agendamento.";
+      console.error("Erro ao criar agendamento:", message);
+      return { success: false, error: message };
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const updateAppointmentStatus = (id: string, status: AppointmentStatus) => {
-    setAppointments((previous) =>
-      previous.map((appointment) =>
-        appointment.id === id
-          ? {
-              ...appointment,
-              status,
-            }
-          : appointment,
-      ),
-    );
+  const updateAppointment = async (
+    id: string,
+    input: UpdateAppointmentInput,
+  ): Promise<{ success: boolean; error?: string }> => {
+    setIsSubmitting(true);
+    try {
+      const body: Record<string, unknown> = {};
+
+      if (input.patientId) body.patientId = input.patientId;
+      if (input.procedureId) body.procedureId = input.procedureId;
+      if (input.notes !== undefined) body.notes = input.notes;
+      if (input.status) body.status = input.status;
+      if (input.durationMinutes !== undefined) body.duration = input.durationMinutes;
+      if (input.date && input.startTime) {
+        body.date = toScheduledAtISO(input.date, input.startTime);
+      }
+
+      const res = await fetch(`${API_URL}/agenda/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        await fetchAppointments();
+        return { success: true };
+      }
+
+      const errorData = await res.json().catch(() => null);
+      const errorMsg = errorData?.message || "Erro ao atualizar agendamento.";
+      return { success: false, error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao atualizar agendamento.";
+      console.error("Erro ao atualizar agendamento:", message);
+      return { success: false, error: message };
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const deleteAppointment = (id: string) => {
-    setAppointments((previous) =>
-      previous.filter((appointment) => appointment.id !== id),
-    );
+  const updateAppointmentStatus = (id: string, status: AppointmentStatus) =>
+    updateAppointment(id, { status });
+
+  const deleteAppointment = async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_URL}/agenda/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        await fetchAppointments();
+        return true;
+      }
+      return false;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao excluir agendamento.";
+      console.error("Erro ao excluir agendamento:", message);
+      return false;
+    }
   };
 
   return {
     appointments,
     stats,
+    loading,
+    isSubmitting,
+    error,
     getAppointmentsForDay,
     createAppointment,
+    updateAppointment,
     updateAppointmentStatus,
     deleteAppointment,
+    refetch: fetchAppointments,
   };
 }
