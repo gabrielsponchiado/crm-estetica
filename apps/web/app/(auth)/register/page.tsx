@@ -1,88 +1,201 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { IconSparkles } from '@tabler/icons-react';
+
+import {
+  registerSchema,
+  type RegisterInput,
+} from '@/schemas/auth.schema';
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const onSubmit = async (data: RegisterInput) => {
+    console.log('Registrar:', data);
 
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem!');
-      return;
-    }
-
-    console.log('Registrar:', { name, email, password });
+    // Depois vamos conectar com a API.
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
-      <div className="w-full max-w-[360px] flex flex-col gap-6 text-center">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Registrar-se</h1>
+    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Decoração de fundo */}
+      <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-rose-100/60 blur-3xl" />
+      <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-rose-50 blur-3xl" />
 
-        {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-200">
-            {error}
+      <div className="relative w-full max-w-[420px]">
+        <div className="bg-white border border-neutral-200/80 rounded-2xl shadow-sm px-7 py-8 sm:px-9 sm:py-9">
+
+          {/* Logo / identidade */}
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-600 shadow-sm shadow-rose-200">
+              <IconSparkles className="h-6 w-6 text-white" />
+            </div>
+
+            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">
+              Crie sua conta
+            </h1>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Configure seu acesso ao sistema
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-left">
-          <input
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Nome"
-            className="w-full h-12 px-4 bg-[#E2E8F0]/60 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 border border-transparent transition-all leading-normal"
-          />
-
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className="w-full h-12 px-4 bg-[#E2E8F0]/60 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 border border-transparent transition-all leading-normal"
-          />
-
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Senha"
-            className="w-full h-12 px-4 bg-[#E2E8F0]/60 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 border border-transparent transition-all leading-normal"
-          />
-
-          <input
-            type="password"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirmar senha"
-            className="w-full h-12 px-4 bg-[#E2E8F0]/60 text-slate-900 placeholder-slate-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 border border-transparent transition-all leading-normal"
-          />
-
-          <button
-            type="submit"
-            className="w-full h-12 mt-2 bg-[#2563EB] hover:bg-blue-700 active:scale-[0.98] text-white font-medium rounded-xl transition-all shadow-sm flex items-center justify-center text-center"
+          {/* Formulário */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
           >
-            Continuar
-          </button>
-        </form>
+            {/* Nome */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="name"
+                className="text-sm font-medium text-slate-700"
+              >
+                Nome
+              </label>
 
-        <p className="text-sm text-slate-500">
-          Já possui conta?{' '}
-          <Link href="/login" className="text-blue-600 font-semibold hover:underline">
-            Fazer login
-          </Link>
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                {...register('name')}
+                placeholder="Seu nome"
+                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                  errors.name
+                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                }`}
+              />
+
+              {errors.name && (
+                <p className="text-xs text-red-600">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-slate-700"
+              >
+                E-mail
+              </label>
+
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...register('email')}
+                placeholder="seu@email.com"
+                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                  errors.email
+                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                }`}
+              />
+
+              {errors.email && (
+                <p className="text-xs text-red-600">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            {/* Senha */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-slate-700"
+              >
+                Senha
+              </label>
+
+              <input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                {...register('password')}
+                placeholder="Mínimo de 8 caracteres"
+                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                  errors.password
+                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                }`}
+              />
+
+              {errors.password && (
+                <p className="text-xs text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {/* Confirmar senha */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="confirmPassword"
+                className="text-sm font-medium text-slate-700"
+              >
+                Confirmar senha
+              </label>
+
+              <input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                {...register('confirmPassword')}
+                placeholder="Digite sua senha novamente"
+                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                  errors.confirmPassword
+                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                }`}
+              />
+
+              {errors.confirmPassword && (
+                <p className="text-xs text-red-600">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
+            {/* Botão */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full h-11 mt-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white text-sm font-medium shadow-sm shadow-rose-200 transition-all"
+            >
+              {isSubmitting ? 'Criando conta...' : 'Criar conta'}
+            </button>
+          </form>
+
+          {/* Login */}
+          <div className="mt-7 pt-6 border-t border-slate-100 text-center">
+            <p className="text-sm text-slate-500">
+              Já possui uma conta?{' '}
+              <Link
+                href="/login"
+                className="font-semibold text-rose-600 hover:text-rose-700 hover:underline underline-offset-2 transition-colors"
+              >
+                Fazer login
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-5 text-center text-xs text-slate-400">
+          Sistema de gestão para clínica estética
         </p>
       </div>
     </div>
