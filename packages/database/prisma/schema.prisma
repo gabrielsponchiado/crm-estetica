@@ -30,9 +30,24 @@ enum QuoteStatus {
   EXPIRED
 }
 
+// Tenant / Clínica (Isolamento de dados)
+model Clinic {
+  id        String   @id @default(uuid())
+  name      String
+  document  String?  // CNPJ / CPF
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  patients     Patient[]
+  procedures   Procedure[]
+  appointments Appointment[]
+}
+
 // Usuários do sistema (Autenticação)
 model User {
   id           String        @id @default(uuid())
+  clinicId     String
   name         String
   email        String        @unique
   password     String
@@ -40,17 +55,19 @@ model User {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   appointments Appointment[]
 }
 
 // Pacientes da clínica
 model Patient {
   id          String    @id @default(uuid())
+  clinicId    String
   name        String
   phone       String
   email       String?
   birthDate   DateTime?
-  cpf         String?   @unique
+  cpf         String?   // Removed global @unique, as CPF can exist in different clinics
   address     String?
 
   // Ficha de anamnese (histórico de saúde, alergias, remédios, etc)
@@ -62,15 +79,20 @@ model Patient {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  clinic      Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   evaluations Evaluation[]
   quotes      Quote[]
   procedures  PatientProcedure[]
   appointments Appointment[]
+
+  @@unique([clinicId, cpf]) // Garante CPF único por clínica
+  @@unique([clinicId, email]) // Garante Email único por clínica
 }
 
 // Catálogo de procedimentos estéticos
 model Procedure {
   id                String             @id @default(uuid())
+  clinicId          String
   name              String
   description       String?
   price             Decimal            @db.Decimal(10, 2)
@@ -79,6 +101,7 @@ model Procedure {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
+  clinic            Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patientProcedures PatientProcedure[]
   appointments      Appointment[]
 }
@@ -125,6 +148,7 @@ model Quote {
 // Agenda de Consultas / Atendimentos
 model Appointment {
   id              String            @id @default(uuid())
+  clinicId        String
   patientId       String
   userId          String?           // Profissional responsável
   procedureId     String?
@@ -136,6 +160,7 @@ model Appointment {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
+  clinic    Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient   Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
   user      User?      @relation(fields: [userId], references: [id])
   procedure Procedure? @relation(fields: [procedureId], references: [id])
