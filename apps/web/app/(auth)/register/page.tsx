@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconSparkles } from '@tabler/icons-react';
+import { fetcher } from '@/lib/api';
 
 import {
   registerSchema,
@@ -19,10 +21,20 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (data: RegisterInput) => {
-    console.log('Registrar:', data);
+  const router = useRouter();
 
-    // Depois vamos conectar com a API.
+  const onSubmit = async (data: RegisterInput) => {
+    try {
+      await fetcher('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      
+      alert('Conta criada com sucesso! Faça login para continuar.');
+      router.push('/login');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao criar conta.');
+    }
   };
 
   return (
@@ -79,6 +91,35 @@ export default function RegisterPage() {
               {errors.name && (
                 <p className="text-xs text-red-600">
                   {errors.name.message}
+                </p>
+              )}
+            </div>
+
+            {/* Nome da Clínica */}
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="clinicName"
+                className="text-sm font-medium text-slate-700"
+              >
+                Nome da Clínica
+              </label>
+
+              <input
+                id="clinicName"
+                type="text"
+                autoComplete="organization"
+                {...register('clinicName')}
+                placeholder="Ex: Clínica Bella"
+                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                  errors.clinicName
+                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                }`}
+              />
+
+              {errors.clinicName && (
+                <p className="text-xs text-red-600">
+                  {errors.clinicName.message}
                 </p>
               )}
             </div>

@@ -8,9 +8,10 @@ import { Decimal } from '@prisma/client/runtime/library';
 export class ProceduresService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateProcedureDto) {
+  async create(dto: CreateProcedureDto, clinicId: string) {
     return this.prisma.procedure.create({
       data: {
+        clinicId,
         name: dto.name,
         description: dto.description,
         price: new Decimal(dto.price),
@@ -20,15 +21,16 @@ export class ProceduresService {
     });
   }
 
-  async findAll() {
+  async findAll(clinicId: string) {
     return this.prisma.procedure.findMany({
+      where: { clinicId },
       orderBy: { name: 'asc' },
     });
   }
 
-  async findOne(id: string) {
-    const procedure = await this.prisma.procedure.findUnique({
-      where: { id },
+  async findOne(id: string, clinicId: string) {
+    const procedure = await this.prisma.procedure.findFirst({
+      where: { id, clinicId },
     });
 
     if (!procedure) {
@@ -38,11 +40,10 @@ export class ProceduresService {
     return procedure;
   }
 
-  async update(id: string, dto: UpdateProcedureDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateProcedureDto, clinicId: string) {
+    await this.findOne(id, clinicId);
 
     const data: Record<string, unknown> = { ...dto };
-    // Converte price para Decimal se foi enviado
     if (dto.price !== undefined) {
       data.price = new Decimal(dto.price);
     }
@@ -53,11 +54,11 @@ export class ProceduresService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
 
     return this.prisma.procedure.delete({
       where: { id },
     });
   }
-}
+}

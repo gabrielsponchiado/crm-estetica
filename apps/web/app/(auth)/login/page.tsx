@@ -1,9 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { IconSparkles } from '@tabler/icons-react';
+import { useAuth } from '@/store/useAuth';
+import { fetcher } from '@/lib/api';
 
 import {
   loginSchema,
@@ -19,10 +22,21 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginInput) => {
-    console.log('Login:', data);
+  const router = useRouter();
+  const { setUser } = useAuth();
 
-    // Depois vamos conectar com a API.
+  const onSubmit = async (data: LoginInput) => {
+    try {
+      const response = await fetcher<{ access_token: string, user: any }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      
+      setUser(response.user, response.access_token);
+      router.push('/agenda');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+    }
   };
 
   return (
