@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
+import { fetcher } from "@/lib/api";
 
 import type {
   ApiAppointment,
@@ -12,8 +13,6 @@ import type {
 } from "@/types/appointment";
 
 export type { Appointment, AppointmentStatus, CreateAppointmentInput, UpdateAppointmentInput };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
 
 interface UseAppointmentsOptions {
   startDate?: Date;
@@ -38,8 +37,6 @@ function normalizeAppointment(item: ApiAppointment): Appointment {
   };
 }
 
-// Combina data (yyyy-MM-dd) + horário (HH:mm) locais num ISO string,
-// no formato que CreateAgendaDto/UpdateAgendaDto esperam em `date`.
 function toScheduledAtISO(date: string, startTime: string) {
   return new Date(`${date}T${startTime}:00`).toISOString();
 }
@@ -50,8 +47,6 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Chaves estáveis pra não recriar a função de fetch a cada render
-  // só porque o objeto Date mudou de referência.
   const startKey = startDate ? startDate.toISOString() : undefined;
   const endKey = endDate ? endDate.toISOString() : undefined;
 
@@ -65,13 +60,9 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
       if (endKey) params.append("endDate", endKey);
 
       const query = params.toString();
-      const res = await fetch(`${API_URL}/agenda${query ? `?${query}` : ""}`);
-
-      if (!res.ok) {
-        throw new Error(`Servidor retornou status ${res.status}`);
-      }
-
-      const data: ApiAppointment[] = await res.json();
+      const data = await fetcher<ApiAppointment[]>(
+        `/agenda${query ? `?${query}` : ""}`
+      );
       setAppointments(data.map(normalizeAppointment));
     } catch (err: unknown) {
       const message =
@@ -111,9 +102,8 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
   ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/agenda`, {
+      await fetcher("/agenda", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           patientId: input.patientId,
           procedureId: input.procedureId,
@@ -122,15 +112,8 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
           notes: input.notes,
         }),
       });
-
-      if (res.ok) {
-        await fetchAppointments();
-        return { success: true };
-      }
-
-      const errorData = await res.json().catch(() => null);
-      const errorMsg = errorData?.message || "Erro ao criar agendamento.";
-      return { success: false, error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg };
+      await fetchAppointments();
+      return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao criar agendamento.";
       console.error("Erro ao criar agendamento:", message);
@@ -147,7 +130,6 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
     setIsSubmitting(true);
     try {
       const body: Record<string, unknown> = {};
-
       if (input.patientId) body.patientId = input.patientId;
       if (input.procedureId) body.procedureId = input.procedureId;
       if (input.notes !== undefined) body.notes = input.notes;
@@ -157,20 +139,12 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
         body.date = toScheduledAtISO(input.date, input.startTime);
       }
 
-      const res = await fetch(`${API_URL}/agenda/${id}`, {
+      await fetcher(`/agenda/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
-      if (res.ok) {
-        await fetchAppointments();
-        return { success: true };
-      }
-
-      const errorData = await res.json().catch(() => null);
-      const errorMsg = errorData?.message || "Erro ao atualizar agendamento.";
-      return { success: false, error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg };
+      await fetchAppointments();
+      return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao atualizar agendamento.";
       console.error("Erro ao atualizar agendamento:", message);
@@ -185,12 +159,9 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
 
   const deleteAppointment = async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_URL}/agenda/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        await fetchAppointments();
-        return true;
-      }
-      return false;
+      await fetcher(`/agenda/${id}`, { method: "DELETE" });
+      await fetchAppointments();
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao excluir agendamento.";
       console.error("Erro ao excluir agendamento:", message);

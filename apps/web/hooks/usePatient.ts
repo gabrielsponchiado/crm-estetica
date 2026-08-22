@@ -6,6 +6,7 @@ import {
   UpdatePatientInput,
   PaginatedPatientsResponse,
 } from "@/types/patient";
+import { fetcher } from "@/lib/api";
 
 export type {
   ApiPatient,
@@ -14,8 +15,6 @@ export type {
   UpdatePatientInput,
   PaginatedPatientsResponse,
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
 
 export function usePatients(itemsPerPage = 10) {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -39,7 +38,6 @@ export function usePatients(itemsPerPage = 10) {
     updatedAt: item.updatedAt,
   });
 
-  // Busca pacientes na API NestJS
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
@@ -54,28 +52,22 @@ export function usePatients(itemsPerPage = 10) {
         params.append("search", searchTerm.trim());
       }
 
-      const res = await fetch(`${API_URL}/patients?${params.toString()}`);
+      const json = await fetcher<PaginatedPatientsResponse | ApiPatient[]>(
+        `/patients?${params.toString()}`
+      );
 
-      if (res.ok) {
-        const json: PaginatedPatientsResponse | ApiPatient[] = await res.json();
-
-        if ("data" in json && Array.isArray(json.data)) {
-          setPatients(json.data.map(normalizePatient));
-          setTotalPages(json.meta?.totalPages || 1);
-          setTotalPatients(json.meta?.total || 0);
-        } else if (Array.isArray(json)) {
-          setPatients(json.map(normalizePatient));
-          setTotalPatients(json.length);
-          setTotalPages(1);
-        }
-      } else {
-        setError("Erro ao carregar clientes.");
+      if ("data" in json && Array.isArray(json.data)) {
+        setPatients(json.data.map(normalizePatient));
+        setTotalPages(json.meta?.totalPages || 1);
+        setTotalPatients(json.meta?.total || 0);
+      } else if (Array.isArray(json)) {
+        setPatients(json.map(normalizePatient));
+        setTotalPatients(json.length);
+        setTotalPages(1);
       }
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Erro desconhecido ao carregar clientes.";
+        err instanceof Error ? err.message : "Erro desconhecido ao carregar clientes.";
       console.error("Erro na requisição da API:", errorMessage);
       setError("Não foi possível conectar ao servidor.");
     } finally {
@@ -98,23 +90,12 @@ export function usePatients(itemsPerPage = 10) {
   ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/patients`, {
+      await fetcher("/patients", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-
-      if (res.ok) {
-        await fetchPatients();
-        return { success: true };
-      }
-
-      const errorData = await res.json().catch(() => null);
-      const errorMsg = errorData?.message || "Erro ao criar cliente.";
-      return {
-        success: false,
-        error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
-      };
+      await fetchPatients();
+      return { success: true };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao criar cliente.";
@@ -132,23 +113,12 @@ export function usePatients(itemsPerPage = 10) {
   ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/patients/${id}`, {
+      await fetcher(`/patients/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-
-      if (res.ok) {
-        await fetchPatients();
-        return { success: true };
-      }
-
-      const errorData = await res.json().catch(() => null);
-      const errorMsg = errorData?.message || "Erro ao atualizar cliente.";
-      return {
-        success: false,
-        error: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg,
-      };
+      await fetchPatients();
+      return { success: true };
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao atualizar cliente.";
@@ -162,14 +132,9 @@ export function usePatients(itemsPerPage = 10) {
   // Excluir Cliente
   const deletePatient = async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_URL}/patients/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        await fetchPatients();
-        return true;
-      }
-      return false;
+      await fetcher(`/patients/${id}`, { method: "DELETE" });
+      await fetchPatients();
+      return true;
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao deletar cliente.";

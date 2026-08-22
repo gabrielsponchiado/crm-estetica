@@ -7,6 +7,7 @@ import {
   ProcedureSortOption,
   ProcedureStats,
 } from "@/types/procedure";
+import { fetcher } from "@/lib/api";
 
 // Re-exporta os tipos para quem importa deste hook (retrocompatibilidade)
 export type {
@@ -16,8 +17,6 @@ export type {
   ProcedureSortOption,
   ProcedureStats,
 };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
 
 export function useProcedures() {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
@@ -50,15 +49,9 @@ export function useProcedures() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_URL}/procedures`);
-
-      if (!res.ok) {
-        throw new Error(`Servidor retornou status ${res.status}`);
-      }
-
-      const data: unknown = await res.json();
+      const data = await fetcher<ApiProcedure[]>("/procedures");
       if (Array.isArray(data)) {
-        setProcedures((data as ApiProcedure[]).map(normalizeProcedure));
+        setProcedures(data.map(normalizeProcedure));
       } else {
         setProcedures([]);
       }
@@ -77,23 +70,15 @@ export function useProcedures() {
   }, [fetchProcedures]);
 
   // Cria um novo procedimento
-  const createProcedure = async (
-    input: CreateProcedureInput
-  ): Promise<boolean> => {
+  const createProcedure = async (input: CreateProcedureInput): Promise<boolean> => {
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/procedures`, {
+      const created = await fetcher<ApiProcedure>("/procedures", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-
-      if (res.ok) {
-        const created: ApiProcedure = await res.json();
-        setProcedures((prev) => [normalizeProcedure(created), ...prev]);
-        return true;
-      }
-      throw new Error("Falha ao criar procedimento no servidor");
+      setProcedures((prev) => [normalizeProcedure(created), ...prev]);
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao salvar procedimento.";
       console.error("Erro ao criar procedimento:", message);
@@ -105,27 +90,16 @@ export function useProcedures() {
   };
 
   // Atualiza um procedimento existente
-  const updateProcedure = async (
-    id: string,
-    input: UpdateProcedureInput
-  ): Promise<boolean> => {
+  const updateProcedure = async (id: string, input: UpdateProcedureInput): Promise<boolean> => {
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/procedures/${id}`, {
+      const updated = await fetcher<ApiProcedure>(`/procedures/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-
-      if (res.ok) {
-        const updated: ApiProcedure = await res.json();
-        const normalized = normalizeProcedure(updated);
-        setProcedures((prev) =>
-          prev.map((p) => (p.id === id ? normalized : p))
-        );
-        return true;
-      }
-      throw new Error("Falha ao atualizar procedimento no servidor");
+      const normalized = normalizeProcedure(updated);
+      setProcedures((prev) => prev.map((p) => (p.id === id ? normalized : p)));
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao atualizar procedimento.";
       console.error("Erro ao atualizar procedimento:", message);
@@ -139,14 +113,9 @@ export function useProcedures() {
   // Exclui um procedimento
   const deleteProcedure = async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_URL}/procedures/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setProcedures((prev) => prev.filter((p) => p.id !== id));
-        return true;
-      }
-      throw new Error("Falha ao excluir procedimento no servidor");
+      await fetcher(`/procedures/${id}`, { method: "DELETE" });
+      setProcedures((prev) => prev.filter((p) => p.id !== id));
+      return true;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao remover procedimento.";
       console.error("Erro ao excluir procedimento:", message);
@@ -179,10 +148,7 @@ export function useProcedures() {
       return { total: 0, averagePrice: 0, averageDuration: 0 };
     }
     const totalPrice = procedures.reduce((acc, p) => acc + p.price, 0);
-    const totalDuration = procedures.reduce(
-      (acc, p) => acc + p.durationMinutes,
-      0
-    );
+    const totalDuration = procedures.reduce((acc, p) => acc + p.durationMinutes, 0);
 
     return {
       total,

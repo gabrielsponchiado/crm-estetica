@@ -122,10 +122,10 @@ export function AppointmentDetailsModal({
 
   return (
     <Dialog open={!!appointment} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-[500px]">
-        <DialogHeader className="border-b bg-muted/20 px-6 pb-5 pt-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
+      <DialogContent className="p-0 sm:max-w-[500px]">
+        <DialogHeader className="border-b bg-muted/20 px-6 pb-5 pt-6 rounded-t-lg min-w-0">
+          <div className="flex items-start justify-between gap-4 min-w-0">
+            <div className="flex min-w-0 items-center gap-3 flex-1">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                 {getInitials(appointment.patientName)}
               </div>
@@ -136,7 +136,7 @@ export function AppointmentDetailsModal({
             </div>
 
             {/* Status Badge — clickable to open status menu */}
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 mr-8">
               <button
                 type="button"
                 onClick={() => setShowStatusMenu((v) => !v)}
@@ -187,7 +187,7 @@ export function AppointmentDetailsModal({
           </div>
         </DialogHeader>
 
-        <div className="space-y-5 px-6 py-5">
+        <div className="space-y-5 px-6 py-5 min-w-0">
           {/* Horário + Data */}
           <div className="rounded-xl border bg-card">
             <div className="grid grid-cols-2 divide-x">
