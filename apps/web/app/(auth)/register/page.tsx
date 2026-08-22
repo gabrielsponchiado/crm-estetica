@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -22,18 +23,22 @@ export default function RegisterPage() {
   });
 
   const router = useRouter();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const onSubmit = async (data: RegisterInput) => {
+    // confirmPassword é só para validação local, não deve ir para o backend
+    const { confirmPassword, ...payload } = data;
+    setAuthError(null);
+
     try {
       await fetcher('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
-      
-      alert('Conta criada com sucesso! Faça login para continuar.');
+
       router.push('/login');
     } catch (err: any) {
-      alert(err.message || 'Erro ao criar conta.');
+      setAuthError(err.message || 'Erro ao criar conta. Tente novamente.');
     }
   };
 
@@ -219,7 +224,15 @@ export default function RegisterPage() {
             >
               {isSubmitting ? 'Criando conta...' : 'Criar conta'}
             </button>
+
+            {/* Erro de criação */}
+            {authError && (
+              <p className="text-center text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg py-2 px-3">
+                {authError}
+              </p>
+            )}
           </form>
+
 
           {/* Login */}
           <div className="mt-7 pt-6 border-t border-slate-100 text-center">

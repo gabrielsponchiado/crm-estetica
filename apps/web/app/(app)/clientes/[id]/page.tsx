@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Phone, Mail, Calendar, FileText, Sparkles, Image, DollarSign, Clock, Loader2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button'; 
 import { maskCpf, maskPhone } from '@/lib/masks';
+import { fetcher } from '@/lib/api';
 
 interface PatientDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -25,11 +26,8 @@ export default function PatientDetailsPage({ params }: PatientDetailsPageProps) 
     async function fetchPatient() {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/patients/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPatient(data);
-        }
+        const data = await fetcher(`/patients/${id}`);
+        setPatient(data);
       } catch (error) {
         console.error('Erro ao carregar paciente:', error);
       } finally {

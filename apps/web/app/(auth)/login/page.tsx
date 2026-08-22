@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -24,18 +25,19 @@ export default function LoginPage() {
 
   const router = useRouter();
   const { setUser } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const onSubmit = async (data: LoginInput) => {
+    setAuthError(null);
     try {
-      const response = await fetcher<{ access_token: string, user: any }>('/auth/login', {
+      const response = await fetcher<{ access_token: string; user: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      
       setUser(response.user, response.access_token);
       router.push('/agenda');
     } catch (err: any) {
-      alert(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      setAuthError(err.message || 'E-mail ou senha inválidos.');
     }
   };
 
@@ -134,7 +136,15 @@ export default function LoginPage() {
             >
               {isSubmitting ? 'Entrando...' : 'Entrar'}
             </button>
+
+            {/* Erro de autenticação */}
+            {authError && (
+              <p className="text-center text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg py-2 px-3">
+                {authError}
+              </p>
+            )}
           </form>
+
 
           {/* Cadastro */}
           <div className="mt-7 pt-6 border-t border-slate-100 text-center">
