@@ -17,6 +17,10 @@ export const registerSchema = z
       .string()
       .min(2, 'O nome deve ter pelo menos 2 caracteres'),
 
+    clinicName: z
+      .string()
+      .min(2, 'O nome da clínica deve ter pelo menos 2 caracteres'),
+
     email: z
       .string()
       .min(1, 'O e-mail é obrigatório')

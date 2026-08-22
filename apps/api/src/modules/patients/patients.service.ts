@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client'; // Importação da tipagem do Prisma
+import { Prisma } from '@prisma/client';
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -9,10 +9,11 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export class PatientsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreatePatientsDto) {
+  async create(dto: CreatePatientsDto, clinicId: string) {
     try {
       return await this.prisma.patient.create({
         data: {
+          clinicId,
           name: dto.name,
           phone: dto.phone,
           cpf: dto.cpf,
@@ -23,16 +24,17 @@ export class PatientsService {
       });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('CPF ou E-mail já cadastrado.');
+        throw new ConflictException('CPF ou E-mail já cadastrado nesta clínica.');
       }
       throw error;
     }
   }
 
-  async findAll(page: number = 1, limit: number = 10, search?: string) {
+  async findAll(clinicId: string, page: number = 1, limit: number = 10, search?: string) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.PatientWhereInput = {
+      clinicId,
       deletedAt: null,
     };
 
@@ -69,10 +71,11 @@ export class PatientsService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, clinicId: string) {
     const patient = await this.prisma.patient.findFirst({
       where: {
         id,
+        clinicId,
         deletedAt: null,
       },
     });
@@ -84,8 +87,8 @@ export class PatientsService {
     return patient;
   }
 
-  async update(id: string, dto: UpdatePatientsDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdatePatientsDto, clinicId: string) {
+    await this.findOne(id, clinicId);
 
     try {
       return await this.prisma.patient.update({
@@ -97,14 +100,14 @@ export class PatientsService {
       });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('CPF ou E-mail já cadastrado.');
+        throw new ConflictException('CPF ou E-mail já cadastrado nesta clínica.');
       }
       throw error;
     }
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
 
     return this.prisma.patient.update({
       where: { id },
@@ -113,4 +116,4 @@ export class PatientsService {
       },
     });
   }
-}
+}

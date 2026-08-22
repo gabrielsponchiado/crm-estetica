@@ -7,9 +7,10 @@ import { UpdateAgendaDto } from '../dto/update-agenda.dto';
 export class AgendaService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateAgendaDto) {
+  async create(dto: CreateAgendaDto, clinicId: string) {
     return await this.prisma.appointment.create({
       data: {
+        clinicId,
         patientId: dto.patientId,
         procedureId: dto.procedureId,
         scheduledAt: new Date(dto.date),
@@ -23,14 +24,15 @@ export class AgendaService {
     });
   }
 
-  async findAll(startDate?: string, endDate?: string) {
+  async findAll(clinicId: string, startDate?: string, endDate?: string) {
     return await this.prisma.appointment.findMany({
       where: {
+        clinicId,
         ...(startDate &&
           endDate && {
             scheduledAt: {
               gte: new Date(startDate),
-              lte: new Date(endDate), 
+              lte: new Date(endDate),
             },
           }),
       },
@@ -44,9 +46,9 @@ export class AgendaService {
     });
   }
 
-  async findOne(id: string) {
-    const appointment = await this.prisma.appointment.findUnique({
-      where: { id },
+  async findOne(id: string, clinicId: string) {
+    const appointment = await this.prisma.appointment.findFirst({
+      where: { id, clinicId },
       include: {
         patient: true,
         procedure: true,
@@ -62,8 +64,8 @@ export class AgendaService {
     return appointment;
   }
 
-  async update(id: string, dto: UpdateAgendaDto) {
-    await this.findOne(id); // Garante que o agendamento existe antes de atualizar
+  async update(id: string, dto: UpdateAgendaDto, clinicId: string) {
+    await this.findOne(id, clinicId);
 
     return await this.prisma.appointment.update({
       where: { id },
@@ -82,11 +84,12 @@ export class AgendaService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
 
     return await this.prisma.appointment.delete({
       where: { id },
     });
   }
 }
+
