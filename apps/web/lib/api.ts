@@ -1,21 +1,15 @@
 import Cookies from "js-cookie";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3333/api";
+const API_URL = "/api";
 
 export async function fetcher<T>(
   endpoint: string,
   options?: RequestInit,
 ): Promise<T> {
-  const token = Cookies.get("crm_auth_token");
-  
   const headers = {
     "Content-Type": "application/json",
     ...options?.headers,
   };
-
-  if (token) {
-    (headers as any)["Authorization"] = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,

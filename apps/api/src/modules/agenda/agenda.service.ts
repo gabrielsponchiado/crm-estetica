@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateAgendaDto } from '../dto/create-agenda.dto';
 import { UpdateAgendaDto } from '../dto/update-agenda.dto';
@@ -7,7 +11,39 @@ import { UpdateAgendaDto } from '../dto/update-agenda.dto';
 export class AgendaService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async assertBelongsToClinic(
+    patientId: string | undefined,
+    procedureId: string | undefined,
+    clinicId: string,
+  ) {
+    if (patientId) {
+      const patient = await this.prisma.patient.findFirst({
+        where: { id: patientId, clinicId },
+        select: { id: true },
+      });
+      if (!patient) {
+        throw new BadRequestException(
+          'Paciente informado não foi encontrado nesta clínica.',
+        );
+      }
+    }
+
+    if (procedureId) {
+      const procedure = await this.prisma.procedure.findFirst({
+        where: { id: procedureId, clinicId },
+        select: { id: true },
+      });
+      if (!procedure) {
+        throw new BadRequestException(
+          'Procedimento informado não foi encontrado nesta clínica.',
+        );
+      }
+    }
+  }
+
   async create(dto: CreateAgendaDto, clinicId: string) {
+    await this.assertBelongsToClinic(dto.patientId, dto.procedureId, clinicId);
+
     return await this.prisma.appointment.create({
       data: {
         clinicId,
@@ -66,6 +102,7 @@ export class AgendaService {
 
   async update(id: string, dto: UpdateAgendaDto, clinicId: string) {
     await this.findOne(id, clinicId);
+    await this.assertBelongsToClinic(dto.patientId, dto.procedureId, clinicId);
 
     return await this.prisma.appointment.update({
       where: { id },
@@ -92,4 +129,3 @@ export class AgendaService {
     });
   }
 }
-
