@@ -78,6 +78,22 @@ export class PatientsService {
         clinicId,
         deletedAt: null,
       },
+      include: {
+        appointments: {
+          orderBy: { scheduledAt: 'desc' },
+          include: { procedure: true },
+        },
+        procedures: {
+          orderBy: { performedAt: 'desc' },
+          include: { procedure: true },
+        },
+        evaluations: {
+          orderBy: { createdAt: 'desc' },
+        },
+        quotes: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     if (!patient) {
