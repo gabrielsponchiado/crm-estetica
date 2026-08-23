@@ -8,7 +8,7 @@ export interface CreateProcedureDTO {
   recommendedMonths?: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333/api';
+const API_URL = '/api';
 
 export function useCreateProcedure(onSuccess?: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
