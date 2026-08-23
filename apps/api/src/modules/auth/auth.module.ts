@@ -6,12 +6,18 @@ import { AuthController } from '././auth.controller';
 import { JwtStrategy } from '././jwt.strategy';
 import { PrismaModule } from '../../prisma/prisma.module';
 
+if (!process.env.JWT_SECRET) {
+  throw new Error(
+    'JWT_SECRET não está definido.',
+  );
+}
+
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '7d' },
     }),
   ],
