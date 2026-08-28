@@ -31,12 +31,7 @@ export const useAuth = create<AuthState>()(
       },
     }),
     {
-      name: "auth-storage", // name of the item in the storage (must be unique)
-      // Persiste apenas o usuário (dados não sensíveis) em localStorage.
-      // O token nunca é gravado ali — a cookie 'crm_auth_token' já é a
-      // única fonte de verdade para autenticação (lib/api.ts e middleware.ts
-      // leem de lá), então mantê-lo também em localStorage era redundante
-      // e ampliava a superfície de roubo via XSS.
+      name: "auth-storage",
       partialize: (state) => ({ user: state.user }),
     }
   )
