@@ -9,7 +9,6 @@ import type { Appointment, CreateAppointmentInput } from "@/types/appointment";
 import type { AppointmentStatus } from "@/types/appointment";
 
 import { AgendaHeader } from "./AgendaHeader";
-import { AgendaStats } from "./AgendaStats";
 import { AgendaToolbar } from "./AgendaToolbar";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -69,17 +68,10 @@ export function AgendaPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex h-full flex-1 flex-col gap-5">
       <AgendaHeader onNewAppointment={() => openNewAppointment()} />
 
-      <AgendaStats
-        total={stats.total}
-        confirmed={stats.confirmed}
-        scheduled={stats.scheduled}
-        cancelled={stats.cancelled}
-      />
-
-      <Card className="overflow-hidden border-border/60 shadow-sm">
+      <Card className="flex flex-1 flex-col overflow-hidden border-border/60 shadow-sm">
         <AgendaToolbar
           periodLabel={agenda.periodLabel}
           viewMode={agenda.viewMode}
@@ -98,7 +90,7 @@ export function AgendaPage() {
         ) : error ? (
           <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">{error}</div>
         ) : (
-          <>
+          <div className="flex flex-1 flex-col overflow-y-auto">
             {agenda.viewMode === "month" && (
               <MonthView
                 days={agenda.monthDays}
@@ -132,7 +124,7 @@ export function AgendaPage() {
                 onNewAppointment={openNewAppointment}
               />
             )}
-          </>
+          </div>
         )}
       </Card>
 

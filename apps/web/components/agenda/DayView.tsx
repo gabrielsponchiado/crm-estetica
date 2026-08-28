@@ -18,7 +18,7 @@ export function DayView({ date, appointments, onSelectAppointment, onNewAppointm
   const hours = Array.from({ length: 13 }, (_, index) => index + 8); // 08h–20h
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <div className="flex flex-1 flex-col overflow-hidden bg-background">
       <div className="border-b px-5 py-4">
         <p className="text-sm font-medium text-muted-foreground">
           {format(date, "EEEE", { locale: ptBR })}
@@ -28,7 +28,7 @@ export function DayView({ date, appointments, onSelectAppointment, onNewAppointm
         </h2>
       </div>
 
-      <div>
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
         {hours.map((hour) => {
           const hourString = `${String(hour).padStart(2, "0")}:00`;
           const hourAppointments = appointments.filter(

@@ -28,8 +28,8 @@ export function MonthView({
   onNewAppointment,
 }: MonthViewProps) {
   return (
-    <div>
-      <div className="grid grid-cols-7 border-b bg-muted/30">
+    <div className="flex flex-1 flex-col">
+      <div className="grid grid-cols-7 border-b bg-muted/30 shrink-0">
         {weekDays.map((day, index) => {
           const isWeekend = index >= 5; // Sáb, Dom
           return (
@@ -45,7 +45,7 @@ export function MonthView({
         })}
       </div>
 
-      <div className="grid grid-cols-7">
+      <div className="grid flex-1 grid-cols-7 grid-rows-5">
         {days.map((day) => {
           const appointments = getAppointmentsForDay(day);
           const currentMonth = isCurrentMonth(day);
@@ -54,7 +54,7 @@ export function MonthView({
           return (
             <div
               key={day.toISOString()}
-              className={`group min-h-[140px] border-b border-r p-2 text-left transition-colors last:border-r-0 ${
+              className={`group flex flex-col border-b border-r p-2 text-left transition-colors min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 ${
                 !currentMonth ? "bg-muted/10" : "bg-background hover:bg-muted/40"
               }`}
             >

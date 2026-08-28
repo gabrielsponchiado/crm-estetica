@@ -27,66 +27,61 @@ export function AgendaToolbar({
   onToday,
 }: AgendaToolbarProps) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b bg-muted/20 px-5 py-3">
-      {/* ── Left: Navigation ── */}
-      <div className="flex items-center gap-3">
-        {/* Today button */}
-        <button
-          type="button"
-          onClick={onToday}
-          className="flex h-8 items-center rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground shadow-sm transition-all hover:bg-muted hover:shadow-none active:scale-95"
-        >
-          Hoje
-        </button>
-
-        {/* Divider */}
-        <div className="h-5 w-px bg-border" />
-
-        {/* Prev / Next arrows */}
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={onPrevious}
-            aria-label="Período anterior"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            aria-label="Próximo período"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Period title */}
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
-          <h2 className="min-w-[180px] text-sm font-bold tracking-tight text-foreground capitalize">
-            {periodLabel}
-          </h2>
-        </div>
-      </div>
-
-      {/* ── Right: View segmented control ── */}
-      <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+    <div className="flex items-center justify-between border-b border-border bg-white px-5 py-3">
+      {/* ── Left: View segmented control ── */}
+      <div className="flex items-center rounded-lg bg-muted/40 p-1 shadow-sm border border-border/50">
         {VIEW_OPTIONS.map(({ value, label }) => (
           <button
             key={value}
             type="button"
             onClick={() => onViewChange(value)}
-            className={`relative h-7 rounded-md px-3.5 text-xs font-semibold transition-all ${
+            className={`relative h-8 rounded-md px-4 text-xs font-semibold transition-all ${
               viewMode === value
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white text-foreground shadow-sm ring-1 ring-border/50"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/50"
             }`}
           >
             {label}
           </button>
         ))}
+      </div>
+
+      {/* ── Right: Period & Navigation ── */}
+      <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-bold text-foreground capitalize">
+            {periodLabel}
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onPrevious}
+            title="Período anterior"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-all"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          
+          <button
+            type="button"
+            onClick={onToday}
+            className="flex h-8 items-center px-3 mx-1 text-xs font-medium rounded-md border border-border bg-white text-foreground shadow-sm hover:bg-muted transition-all"
+          >
+            Hoje
+          </button>
+
+          <button
+            type="button"
+            onClick={onNext}
+            title="Próximo período"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-white text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground transition-all"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
