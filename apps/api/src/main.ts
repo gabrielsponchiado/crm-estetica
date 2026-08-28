@@ -7,11 +7,16 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : [true]; // default to true if not set
+  if (!process.env.ALLOWED_ORIGINS) {
+    throw new Error(
+      'ALLOWED_ORIGINS não está definido. Configure a variável de ambiente ' +
+        '(ex: ALLOWED_ORIGINS=http://localhost:3000) antes de iniciar a API.',
+    );
+  }
+  const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map((o) =>
+    o.trim(),
+  );
 
-  // Habilita CORS para qualquer origem (Vercel, localhost, etc.)
   app.enableCors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS'],

@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
 
   // Se já estiver logado e tentar acessar login/register, redireciona para o app
   if (token && isAuthRoute) {
-    return NextResponse.redirect(new URL('/agenda', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();

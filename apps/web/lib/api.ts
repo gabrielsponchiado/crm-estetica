@@ -1,5 +1,3 @@
-import Cookies from "js-cookie";
-
 const API_URL = "/api";
 
 export async function fetcher<T>(
