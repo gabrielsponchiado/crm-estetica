@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -71,6 +71,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar-open');
+    if (saved !== null) {
+      setOpen(saved === 'true');
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    setOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar-open', String(next));
+      return next;
+    });
+  };
+
   const initials = user?.name
     ? user.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
     : '?';
@@ -84,7 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         {/* Toggle button */}
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggleSidebar}
           aria-label={open ? 'Fechar menu' : 'Abrir menu'}
           className="absolute -right-3.5 top-7 z-50 flex h-7 w-7 items-center
                      justify-center rounded-full border border-neutral-200

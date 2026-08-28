@@ -23,13 +23,13 @@ export function WeekView({
   onNewAppointment,
 }: WeekViewProps) {
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
-      <div className="grid grid-cols-7">
+    <div className="flex flex-1 flex-col overflow-hidden bg-background">
+      <div className="grid flex-1 grid-cols-7">
         {days.map((day) => {
           const appointments = getAppointmentsForDay(day);
 
           return (
-            <div key={day.toISOString()} className="min-h-[600px] border-r last:border-r-0">
+            <div key={day.toISOString()} className="flex flex-col border-r last:border-r-0">
               <div className="border-b p-3 text-center">
                 <p className="text-xs font-medium uppercase text-muted-foreground">
                   {format(day, "EEE", { locale: ptBR })}
@@ -44,7 +44,7 @@ export function WeekView({
                 </div>
               </div>
 
-              <div className="space-y-2 p-2">
+              <div className="flex-1 space-y-2 p-2 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
                 {appointments.map((appointment) => {
                   const config = statusConfig[appointment.status];
 
