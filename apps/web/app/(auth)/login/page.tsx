@@ -30,12 +30,12 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput) => {
     setAuthError(null);
     try {
-      const response = await fetcher<{ access_token: string; user: any }>('/auth/login', {
+      const response = await fetcher<{ user: any }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      setUser(response.user, response.access_token);
-      router.push('/agenda');
+      setUser(response.user);
+      router.push('/dashboard');
     } catch (err: any) {
       setAuthError(err.message || 'E-mail ou senha inválidos.');
     }

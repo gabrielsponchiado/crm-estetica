@@ -62,10 +62,9 @@ export function AgendaPage() {
   };
 
   const handleStatusChange = async (appointment: Appointment, status: AppointmentStatus) => {
-    setCancellingId(appointment.id); // reutilizando o loading state
+    setCancellingId(appointment.id);
     await updateAppointmentStatus(appointment.id, status);
     setCancellingId(null);
-    // Keep modal open after status change so user can see the updated badge
     setSelectedAppointment((prev) => prev ? { ...prev, status } : null);
   };
 

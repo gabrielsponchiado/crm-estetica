@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import Cookies from "js-cookie";
 
 interface User {
   id: string;
@@ -12,8 +11,7 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
-  setUser: (user: User, token: string) => void;
+  setUser: (user: User) => void;
   logout: () => void;
 }
 
@@ -21,15 +19,14 @@ export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
-      setUser: (user, token) => {
-        set({ user, token });
+      setUser: (user) => {
+        set({ user });
       },
       logout: async () => {
         try {
           await fetch("/api/auth/logout", { method: "POST" });
         } catch (e) {}
-        set({ user: null, token: null });
+        set({ user: null });
         window.location.href = "/login";
       },
     }),

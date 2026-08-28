@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -24,10 +21,7 @@ export function PatientsPagination({
   loading,
   onPageChange,
 }: PatientsPaginationProps) {
-  const getPages = (): (
-    | number
-    | string
-  )[] => {
+  const getPages = (): (number | string)[] => {
     const pages: (number | string)[] = [];
 
     if (totalPages <= 7) {
@@ -39,15 +33,7 @@ export function PatientsPagination({
     }
 
     if (currentPage <= 4) {
-      return [
-        1,
-        2,
-        3,
-        4,
-        5,
-        "...",
-        totalPages,
-      ];
+      return [1, 2, 3, 4, 5, "...", totalPages];
     }
 
     if (currentPage >= totalPages - 3) {
@@ -74,17 +60,12 @@ export function PatientsPagination({
   };
 
   const firstItem =
-    totalPatients === 0
-      ? 0
-      : (currentPage - 1) * itemsPerPage + 1;
+    totalPatients === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
 
   const lastItem =
     totalPatients === 0
       ? 0
-      : Math.min(
-          currentPage * itemsPerPage,
-          totalPatients,
-        );
+      : Math.min(currentPage * itemsPerPage, totalPatients);
 
   return (
     <div className="flex shrink-0 flex-col items-center justify-between gap-3 border-t border-border/60 px-4 py-3 sm:flex-row">
@@ -93,10 +74,7 @@ export function PatientsPagination({
         <span className="font-medium text-foreground">
           {firstItem}-{lastItem}
         </span>{" "}
-        de{" "}
-        <span className="font-medium text-foreground">
-          {totalPatients}
-        </span>{" "}
+        de <span className="font-medium text-foreground">{totalPatients}</span>{" "}
         clientes
       </p>
 
@@ -104,21 +82,13 @@ export function PatientsPagination({
         <Button
           variant="ghost"
           size="sm"
-          disabled={
-            currentPage <= 1 || loading
-          }
-          onClick={() =>
-            onPageChange(
-              Math.max(1, currentPage - 1),
-            )
-          }
+          disabled={currentPage <= 1 || loading}
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           className="h-8 gap-1 rounded-md px-2.5 text-xs"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
 
-          <span className="hidden sm:inline">
-            Anterior
-          </span>
+          <span className="hidden sm:inline">Anterior</span>
         </Button>
 
         <div className="mx-1 flex items-center gap-0.5">
@@ -134,24 +104,17 @@ export function PatientsPagination({
               );
             }
 
-            const active =
-              page === currentPage;
+            const active = page === currentPage;
 
             return (
               <Button
                 key={page}
-                variant={
-                  active ? "default" : "ghost"
-                }
+                variant={active ? "default" : "ghost"}
                 size="icon"
                 disabled={loading}
-                onClick={() =>
-                  onPageChange(page)
-                }
+                onClick={() => onPageChange(page)}
                 className={`h-8 w-8 rounded-md text-xs ${
-                  active
-                    ? "font-semibold shadow-sm"
-                    : "text-muted-foreground"
+                  active ? "font-semibold shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 {page}
@@ -163,23 +126,11 @@ export function PatientsPagination({
         <Button
           variant="ghost"
           size="sm"
-          disabled={
-            currentPage >= totalPages ||
-            loading
-          }
-          onClick={() =>
-            onPageChange(
-              Math.min(
-                totalPages,
-                currentPage + 1,
-              ),
-            )
-          }
+          disabled={currentPage >= totalPages || loading}
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           className="h-8 gap-1 rounded-md px-2.5 text-xs"
         >
-          <span className="hidden sm:inline">
-            Próximo
-          </span>
+          <span className="hidden sm:inline">Próximo</span>
 
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
