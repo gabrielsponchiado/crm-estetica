@@ -38,6 +38,18 @@ export class AgendaController {
     return this.agendaService.findAll(user.clinicId, startDate, endDate);
   }
 
+    // Precisa vir ANTES de @Get(':id') — senão o NestJS entende "stats"
+  // como se fosse o :id de um agendamento.
+  @Get('stats/revenue-by-month')
+  revenueByMonth(
+    @CurrentUser() user: { userId: string; clinicId: string },
+    @Query('months') months?: string,
+  ) {
+    const parsed = months ? parseInt(months, 10) : 6;
+    const safeMonths = Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, 24) : 6;
+    return this.agendaService.getMonthlyRevenue(user.clinicId, safeMonths);
+  }
+
   @Get(':id')
   findOne(
     @Param('id') id: string,
@@ -62,4 +74,4 @@ export class AgendaController {
   ) {
     return this.agendaService.remove(id, user.clinicId);
   }
-}
+}

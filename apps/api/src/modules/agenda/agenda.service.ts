@@ -128,4 +128,51 @@ export class AgendaService {
       where: { id },
     });
   }
+
+    /**
+   * Faturamento mensal dos últimos `months` meses (incluindo o mês atual).
+   *
+   * Só conta atendimentos com status COMPLETED — ou seja, o procedimento
+   * realmente foi realizado. Agendamentos futuros/pendentes (SCHEDULED,
+   * CONFIRMED) ainda não são receita garantida, e CANCELED/NO_SHOW não
+   * geraram faturamento nenhum, então ficam de fora da soma.
+   */
+  async getMonthlyRevenue(clinicId: string, months = 6) {
+    const now = new Date();
+    const rangeStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+    const appointments = await this.prisma.appointment.findMany({
+      where: {
+        clinicId,
+        status: 'COMPLETED',
+        scheduledAt: { gte: rangeStart },
+      },
+      select: {
+        scheduledAt: true,
+        procedure: { select: { price: true } },
+      },
+    });
+
+    // Inicializa os últimos N meses com faturamento zero, na ordem certa,
+    // pra garantir que meses sem nenhum atendimento apareçam no gráfico.
+    const buckets = new Map<string, { month: string; label: string; revenue: number }>();
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+      const labelCapitalizado = label.charAt(0).toUpperCase() + label.slice(1);
+      buckets.set(key, { month: key, label: labelCapitalizado, revenue: 0 });
+    }
+
+    for (const appt of appointments) {
+      const d = appt.scheduledAt;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const bucket = buckets.get(key);
+      if (bucket && appt.procedure) {
+        bucket.revenue += Number(appt.procedure.price);
+      }
+    }
+
+    return Array.from(buckets.values());
+  }
 }
