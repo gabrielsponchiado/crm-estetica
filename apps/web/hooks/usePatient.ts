@@ -38,7 +38,7 @@ export function usePatients(itemsPerPage = 10) {
     updatedAt: item.updatedAt,
   });
 
-  const fetchPatients = useCallback(async () => {
+  const fetchPatients = useCallback(async (retries = 3, delayMs = 2000) => {
     try {
       setLoading(true);
       setError(null);
@@ -68,6 +68,14 @@ export function usePatients(itemsPerPage = 10) {
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro desconhecido ao carregar clientes.";
+
+      // Retry automático quando API ainda está iniciando (ECONNREFUSED → 500)
+      if (retries > 0 && (errorMessage.includes("500") || errorMessage.includes("fetch"))) {
+        console.warn(`API indisponível, tentando novamente em ${delayMs / 1000}s... (${retries} tentativa(s) restante(s))`);
+        setTimeout(() => fetchPatients(retries - 1, delayMs), delayMs);
+        return;
+      }
+
       console.error("Erro na requisição da API:", errorMessage);
       setError("Não foi possível conectar ao servidor.");
     } finally {
