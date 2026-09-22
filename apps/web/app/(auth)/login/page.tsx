@@ -57,7 +57,7 @@ export default function LoginPage() {
             </div>
 
             <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">
-              Bem-vinda de volta
+              Bem-vindo(a) de volta
             </h1>
 
             <p className="mt-2 text-sm text-slate-500">
