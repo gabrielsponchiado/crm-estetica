@@ -8,6 +8,7 @@ import { ProceduresModule } from './modules/procedures/procedures.module';
 import { PatientsModule } from './modules/patients/patients.module';
 import { AgendaModule } from './modules/agenda/agenda.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AuthModule } from './modules/auth/auth.module';
     PatientsModule,
     AgendaModule,
     AuthModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
