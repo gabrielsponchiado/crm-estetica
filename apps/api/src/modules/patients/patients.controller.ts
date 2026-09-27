@@ -9,11 +9,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { PatientsService } from './patients.service';
+import { PatientsService, PatientSearchField } from './patients.service';
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+
+const VALID_SEARCH_FIELDS: PatientSearchField[] = ['all', 'name', 'email', 'cpf'];
 
 @UseGuards(JwtAuthGuard)
 @Controller('patients')
@@ -34,10 +36,17 @@ export class PatientsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
+    @Query('searchField') searchField?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.patientsService.findAll(user.clinicId, pageNum, limitNum, search);
+    const field: PatientSearchField = VALID_SEARCH_FIELDS.includes(
+      searchField as PatientSearchField,
+    )
+      ? (searchField as PatientSearchField)
+      : 'all';
+
+    return this.patientsService.findAll(user.clinicId, pageNum, limitNum, search, field);
   }
 
   @Get(':id')
@@ -64,4 +73,4 @@ export class PatientsController {
   ) {
     return this.patientsService.remove(id, user.clinicId);
   }
-}
+}

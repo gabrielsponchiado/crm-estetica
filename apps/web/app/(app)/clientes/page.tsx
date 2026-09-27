@@ -28,19 +28,21 @@ const ITEMS_PER_PAGE = 10;
 
 export default function ClientesPage() {
   const {
-    patients,
-    totalPatients,
-    loading,
-    isSubmitting,
-    searchTerm,
-    setSearchTerm,
-    currentPage,
-    totalPages,
-    setCurrentPage,
-    createPatient,
-    updatePatient,
-    deletePatient,
-  } = usePatients(ITEMS_PER_PAGE);
+  patients,
+  totalPatients,
+  loading,
+  isSubmitting,
+  searchTerm,
+  setSearchTerm,
+  searchField,
+  setSearchField,
+  currentPage,
+  totalPages,
+  setCurrentPage,
+  createPatient,
+  updatePatient,
+  deletePatient,
+} = usePatients(ITEMS_PER_PAGE);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -136,7 +138,7 @@ export default function ClientesPage() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-5">
+    <div className="flex flex-col gap-5">
       <header className="flex shrink-0 items-end justify-between gap-6">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -161,13 +163,15 @@ export default function ClientesPage() {
         </Button>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-background shadow-sm">
-        <PatientsToolbar
-          searchTerm={searchTerm}
-          totalPatients={totalPatients}
-          onSearchChange={setSearchTerm}
-        />
+      <PatientsToolbar
+        searchField={searchField}
+        searchTerm={searchTerm}
+        totalPatients={totalPatients}
+        onSearchChange={setSearchTerm}
+        onSearchFieldChange={setSearchField}
+      />
 
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-background">
         <PatientsTable
           patients={patients}
           loading={loading}

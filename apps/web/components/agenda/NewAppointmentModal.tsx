@@ -19,6 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { CalendarDays, Check, Clock3, FileText, Plus, Search, Stethoscope, UserRound, X } from "lucide-react";
 
@@ -57,6 +64,11 @@ export function NewAppointmentModal({
 
   const { patients, loading: loadingPatients } = usePatients(500);
   const { procedures, loading: loadingProcedures } = useProcedures();
+
+  const procedureItems = procedures.map((procedure) => ({
+    value: procedure.id,
+    label: procedure.name,
+  }));
 
   // --- Patient autocomplete state ---
   const [patientId, setPatientId] = useState("");
@@ -297,10 +309,11 @@ export function NewAppointmentModal({
             </div>
 
             <FormField label="Procedimento" required error={errors.procedureId}>
-              <select
-                value={procedureId}
-                onChange={(event) => {
-                  const value = event.target.value;
+              <Select
+                items={procedureItems}
+                value={procedureId || null}
+                onValueChange={(value) => {
+                  if (!value) return;
                   setProcedureId(value);
                   clearError("procedureId");
 
@@ -310,19 +323,34 @@ export function NewAppointmentModal({
                   }
                 }}
                 disabled={loadingProcedures}
-                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring ${
-                  errors.procedureId ? "border-destructive focus:ring-destructive" : ""
-                }`}
               >
-                <option value="" disabled>
-                  {loadingProcedures ? "Carregando procedimentos..." : "Selecione um procedimento"}
-                </option>
-                {procedures.map((procedure) => (
-                  <option key={procedure.id} value={procedure.id}>
-                    {procedure.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  className={`h-10 w-full px-3 text-sm data-[size=default]:h-10 ${
+                    errors.procedureId ? "border-destructive focus:ring-destructive" : ""
+                  }`}
+                >
+                  <SelectValue
+                    placeholder={
+                      loadingProcedures
+                        ? "Carregando procedimentos..."
+                        : "Selecione um procedimento"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent
+                  side="bottom"
+                  align="start"
+                  sideOffset={6}
+                  alignItemWithTrigger={false}
+                  className="w-(--anchor-width)"
+                >
+                  {procedureItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value} className="py-2">
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormField>
           </div>
 

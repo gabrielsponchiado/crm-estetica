@@ -166,51 +166,63 @@ export function ProcedimentosPage() {
           onClick={handleOpenCreateModal}
           className="h-10 gap-2 rounded-lg px-4 shadow-sm font-semibold"
         >
-          <Plus className="w-4 h-4" /> Novo Procedimento
+          <Plus className="w-4 h-4" /> Criar Procedimento
         </Button>
       </header>
 
-      {/* Cards de Métricas SaaS */}
+      {/* Cards de Métricas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-6 bg-white border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 group">
-          <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform duration-300 mb-1">
-            <Layers className="w-5 h-5" />
+        <Card className="p-5 border-border shadow-none">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">
+                Total de Procedimentos
+              </p>
+              <h3 className="text-xl font-semibold text-foreground">
+                {loading ? "..." : stats.total}
+              </h3>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
-            Total de Procedimentos
-          </p>
-          <h3 className="text-2xl font-bold text-foreground tracking-tight">
-            {loading ? "..." : stats.total}
-          </h3>
         </Card>
 
-        <Card className="p-6 bg-white border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 group">
-          <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-1">
-            <DollarSign className="w-5 h-5" />
+        <Card className="p-5 border-border shadow-none">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0">
+              <DollarSign className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">
+                Preço Médio por Serviço
+              </p>
+              <h3 className="text-xl font-semibold text-foreground">
+                {loading
+                  ? "..."
+                  : stats.averagePrice.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}
+              </h3>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
-            Preço Médio por Serviço
-          </p>
-          <h3 className="text-2xl font-bold text-foreground tracking-tight">
-            {loading
-              ? "..."
-              : stats.averagePrice.toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-          </h3>
         </Card>
 
-        <Card className="p-6 bg-white border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center gap-2 group">
-          <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform duration-300 mb-1">
-            <TrendingUp className="w-5 h-5" />
+        <Card className="p-5 border-border shadow-none">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium">
+                Duração Média
+              </p>
+              <h3 className="text-xl font-semibold text-foreground">
+                {loading ? "..." : formatDuration(stats.averageDuration)}
+              </h3>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">
-            Duração Média
-          </p>
-          <h3 className="text-2xl font-bold text-foreground tracking-tight">
-            {loading ? "..." : formatDuration(stats.averageDuration)}
-          </h3>
         </Card>
       </div>
 
@@ -223,6 +235,7 @@ export function ProcedimentosPage() {
             placeholder="Buscar procedimento por nome ou descrição..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            maxLength={50}
             className="pl-9 pr-8"
           />
           {searchTerm && (
@@ -270,16 +283,16 @@ export function ProcedimentosPage() {
           {procedures.map((proc) => (
             <Card
               key={proc.id}
-              className="group flex flex-col justify-between bg-white border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-lg hover:border-rose-200 transition-all duration-300"
+              className="flex flex-col justify-between border-border shadow-none transition-colors hover:border-foreground/20"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base font-semibold text-slate-800 line-clamp-1 group-hover:text-rose-600 transition-colors">
+                  <CardTitle className="text-sm font-semibold text-foreground line-clamp-1">
                     {proc.name}
                   </CardTitle>
 
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="h-8 w-8 flex items-center justify-center rounded-md -mr-1.5 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer transition">
+                    <DropdownMenuTrigger className="h-7 w-7 flex items-center justify-center rounded-md -mr-1 -mt-1 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer transition">
                       <MoreVertical className="w-4 h-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
@@ -314,9 +327,9 @@ export function ProcedimentosPage() {
               </CardHeader>
 
               <CardContent className="py-0">
-                <div className="flex items-center justify-between text-xs text-muted-foreground gap-2 pt-3 border-t">
-                  <span className="flex items-center gap-1 font-medium text-foreground/80">
-                    <Clock className="w-3.5 h-3.5 text-primary" />
+                <div className="flex items-center justify-between text-xs text-muted-foreground gap-2 pt-3 border-t border-border">
+                  <span className="flex items-center gap-1 font-medium text-foreground/70">
+                    <Clock className="w-3.5 h-3.5" />
                     {formatDuration(proc.durationMinutes)}
                   </span>
 
@@ -336,15 +349,12 @@ export function ProcedimentosPage() {
                 <span className="text-xs text-muted-foreground font-medium">
                   Valor do serviço
                 </span>
-                <Badge
-                  variant="secondary"
-                  className="text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1"
-                >
+                <span className="text-sm font-semibold text-foreground">
                   {proc.price.toLocaleString("pt-BR", {
                     style: "currency",
                     currency: "BRL",
                   })}
-                </Badge>
+                </span>
               </CardFooter>
             </Card>
           ))}
@@ -360,7 +370,7 @@ export function ProcedimentosPage() {
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm">
               {searchTerm
-                ? `Nenhum procedimento corresponde ao termo "${searchTerm}".`
+                ? "Nenhum procedimento corresponde à sua busca."
                 : "Você ainda não cadastrou nenhum procedimento no catálogo da clínica."}
             </p>
           </div>
