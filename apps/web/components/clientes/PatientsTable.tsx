@@ -4,12 +4,10 @@ import Link from "next/link";
 
 import {
   Users,
-  Phone,
-  Mail,
-  FileText,
   MoreHorizontal,
   Pencil,
   Trash2,
+  ChevronRight,
 } from "lucide-react";
 
 import {
@@ -53,23 +51,23 @@ export function PatientsTable({
   onDelete,
 }: PatientsTableProps) {
   return (
-    <div className="min-h-0 flex-1 overflow-auto">
+    <div className="overflow-x-auto">
       <Table className="w-full">
-        <TableHeader className="sticky top-0 z-10 bg-background">
+        <TableHeader>
           <TableRow className="border-b border-border/60 hover:bg-transparent">
-            <TableHead className="h-10 w-[30%] px-5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="h-10 w-[30%] px-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Cliente
             </TableHead>
 
-            <TableHead className="h-10 w-[20%] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="h-10 w-[20%] text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Telefone
             </TableHead>
 
-            <TableHead className="h-10 w-[18%] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="h-10 w-[18%] text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               CPF
             </TableHead>
 
-            <TableHead className="h-10 w-[27%] text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <TableHead className="h-10 w-[27%] text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               E-mail
             </TableHead>
 
@@ -81,14 +79,11 @@ export function PatientsTable({
           {loading ? (
             Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
               <TableRow key={index} className="border-border/40">
-                <TableCell className="px-5 py-3.5">
+                <TableCell className="px-5 py-3">
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-8 w-8 rounded-full" />
 
-                    <div className="space-y-1.5">
-                      <Skeleton className="h-3.5 w-32" />
-                      <Skeleton className="h-2.5 w-20" />
-                    </div>
+                    <Skeleton className="h-3.5 w-32" />
                   </div>
                 </TableCell>
 
@@ -111,7 +106,7 @@ export function PatientsTable({
             ))
           ) : patients.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-[420px] text-center">
+              <TableCell colSpan={5} className="h-[280px] text-center">
                 <div className="mx-auto flex max-w-sm flex-col items-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
                     <Users className="h-5 w-5 text-muted-foreground" />
@@ -137,8 +132,7 @@ export function PatientsTable({
                 key={patient.id}
                 className="group border-border/40 transition-colors hover:bg-muted/30"
               >
-
-                <TableCell className="px-5 py-3.5">
+                <TableCell className="px-5 py-2.5">
                   <Link
                     href={`/clientes/${patient.id}`}
                     className="flex min-w-0 items-center gap-3"
@@ -147,58 +141,35 @@ export function PatientsTable({
                       {patient.name.trim().substring(0, 2).toUpperCase()}
                     </div>
 
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium transition-colors group-hover:text-primary">
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                      <p className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                         {patient.name}
                       </p>
 
-                      <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        Ver prontuário
-                      </p>
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 -translate-x-1 text-primary opacity-0 transition-all duration-150 group-hover:translate-x-0 group-hover:opacity-100" />
                     </div>
                   </Link>
                 </TableCell>
 
                 <TableCell>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-
-                    <span>
-                      {patient.phone
-                        ? maskPhone(patient.phone)
-                        : "Não informado"}
-                    </span>
-                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {patient.phone ? maskPhone(patient.phone) : "—"}
+                  </span>
                 </TableCell>
 
                 <TableCell>
-                  {patient.cpf ? (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-
-                      <span>{maskCpf(patient.cpf)}</span>
-                    </div>
-                  ) : (
-                    <span className="inline-flex rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                      Não informado
-                    </span>
-                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {patient.cpf ? maskCpf(patient.cpf) : "—"}
+                  </span>
                 </TableCell>
 
                 <TableCell>
-                  {patient.email ? (
-                    <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-                      <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-
-                      <span className="truncate" title={patient.email}>
-                        {patient.email}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="inline-flex rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                      Não informado
-                    </span>
-                  )}
+                  <span
+                    className="block max-w-[220px] truncate text-xs text-muted-foreground"
+                    title={patient.email || undefined}
+                  >
+                    {patient.email || "—"}
+                  </span>
                 </TableCell>
 
                 {/* Ações */}

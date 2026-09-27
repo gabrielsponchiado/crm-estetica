@@ -252,12 +252,12 @@ export function PatientModal({
               </FormField>
 
               <FormField label="Data de Nascimento">
-                <Input
-                  type="date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  className="h-10"
-                />
+                  <Input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="h-10"
+                  />
               </FormField>
             </div>
           </div>

@@ -16,11 +16,14 @@ export type {
   PaginatedPatientsResponse,
 };
 
+export type PatientSearchField = "all" | "name" | "email" | "cpf";
+
 export function usePatients(itemsPerPage = 10) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchField, setSearchField] = useState<PatientSearchField>("all");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalPatients, setTotalPatients] = useState<number>(0);
@@ -50,6 +53,7 @@ export function usePatients(itemsPerPage = 10) {
 
       if (searchTerm.trim()) {
         params.append("search", searchTerm.trim());
+        params.append("searchField", searchField);
       }
 
       const json = await fetcher<PaginatedPatientsResponse | ApiPatient[]>(
@@ -81,7 +85,7 @@ export function usePatients(itemsPerPage = 10) {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchTerm]);
+  }, [currentPage, itemsPerPage, searchTerm, searchField]);
 
   useEffect(() => {
     fetchPatients();
@@ -89,6 +93,11 @@ export function usePatients(itemsPerPage = 10) {
 
   const handleSearchChange = (term: string) => {
     setSearchTerm(term);
+    setCurrentPage(1);
+  };
+
+  const handleSearchFieldChange = (field: PatientSearchField) => {
+    setSearchField(field);
     setCurrentPage(1);
   };
 
@@ -159,6 +168,8 @@ export function usePatients(itemsPerPage = 10) {
     error,
     searchTerm,
     setSearchTerm: handleSearchChange,
+    searchField,
+    setSearchField: handleSearchFieldChange,
     currentPage,
     totalPages,
     setCurrentPage,
