@@ -5,6 +5,8 @@ import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
+export type PatientSearchField = 'all' | 'name' | 'email' | 'cpf';
+
 @Injectable()
 export class PatientsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -30,7 +32,13 @@ export class PatientsService {
     }
   }
 
-  async findAll(clinicId: string, page: number = 1, limit: number = 10, search?: string) {
+  async findAll(
+    clinicId: string,
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    searchField: PatientSearchField = 'all',
+  ) {
     const skip = (page - 1) * limit;
 
     const where: Prisma.PatientWhereInput = {
@@ -39,11 +47,20 @@ export class PatientsService {
     };
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { cpf: { contains: search } },
-        { phone: { contains: search } },
-      ];
+      if (searchField === 'name') {
+        where.name = { contains: search, mode: 'insensitive' };
+      } else if (searchField === 'email') {
+        where.email = { contains: search, mode: 'insensitive' };
+      } else if (searchField === 'cpf') {
+        where.cpf = { contains: search };
+      } else {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { cpf: { contains: search } },
+          { phone: { contains: search } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ];
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -132,4 +149,4 @@ export class PatientsService {
       },
     });
   }
-}
+}
