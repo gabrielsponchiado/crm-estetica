@@ -12,14 +12,15 @@ const cookieExtractor = (req: Request) => {
   return token || ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 };
 
+interface JwtPayload {
+  sub: string;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private prisma: PrismaService) {
     if (!process.env.JWT_SECRET) {
-      throw new Error(
-        'JWT_SECRET não está definido.',
-      );
+      throw new Error('JWT_SECRET não está definido.');
     }
 
     super({
@@ -29,7 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
@@ -38,10 +39,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException();
     }
 
-    return { 
-      userId: payload.sub, 
-      clinicId: payload.clinicId,
-      role: payload.role
+    return {
+      userId: user.id,
+      clinicId: user.clinicId,
+      role: user.role,
     };
   }
 }
