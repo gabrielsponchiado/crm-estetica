@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type PatientSearchField = 'all' | 'name' | 'email' | 'cpf';
 
@@ -25,9 +28,15 @@ export class PatientsService {
         },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('CPF ou E-mail já cadastrado nesta clínica.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'CPF ou E-mail já cadastrado nesta clínica.',
+        );
       }
+
       throw error;
     }
   }
@@ -48,17 +57,43 @@ export class PatientsService {
 
     if (search) {
       if (searchField === 'name') {
-        where.name = { contains: search, mode: 'insensitive' };
+        where.name = {
+          contains: search,
+          mode: 'insensitive',
+        };
       } else if (searchField === 'email') {
-        where.email = { contains: search, mode: 'insensitive' };
+        where.email = {
+          contains: search,
+          mode: 'insensitive',
+        };
       } else if (searchField === 'cpf') {
-        where.cpf = { contains: search };
+        where.cpf = {
+          contains: search,
+        };
       } else {
         where.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { cpf: { contains: search } },
-          { phone: { contains: search } },
-          { email: { contains: search, mode: 'insensitive' } },
+          {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            cpf: {
+              contains: search,
+            },
+          },
+          {
+            phone: {
+              contains: search,
+            },
+          },
+          {
+            email: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
         ];
       }
     }
@@ -66,11 +101,15 @@ export class PatientsService {
     const [data, total] = await Promise.all([
       this.prisma.patient.findMany({
         where,
-        take: Number(limit),
-        skip: Number(skip),
-        orderBy: { name: 'asc' },
+        take: limit,
+        skip,
+        orderBy: {
+          name: 'asc',
+        },
       }),
-      this.prisma.patient.count({ where }),
+      this.prisma.patient.count({
+        where,
+      }),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -79,8 +118,8 @@ export class PatientsService {
       data,
       meta: {
         total,
-        page: Number(page),
-        limit: Number(limit),
+        page,
+        limit,
         totalPages,
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
@@ -97,44 +136,72 @@ export class PatientsService {
       },
       include: {
         appointments: {
-          orderBy: { scheduledAt: 'desc' },
-          include: { procedure: true },
+          orderBy: {
+            scheduledAt: 'desc',
+          },
+          include: {
+            procedure: true,
+          },
         },
         procedures: {
-          orderBy: { performedAt: 'desc' },
-          include: { procedure: true },
+          orderBy: {
+            performedAt: 'desc',
+          },
+          include: {
+            procedure: true,
+          },
         },
         evaluations: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: {
+            createdAt: 'desc',
+          },
         },
         quotes: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: {
+            createdAt: 'desc',
+          },
         },
       },
     });
 
     if (!patient) {
-      throw new NotFoundException(`Paciente com ID ${id} não foi encontrado.`);
+      throw new NotFoundException(
+        `Paciente com ID ${id} não foi encontrado.`,
+      );
     }
 
     return patient;
   }
 
-  async update(id: string, dto: UpdatePatientsDto, clinicId: string) {
+  async update(
+    id: string,
+    dto: UpdatePatientsDto,
+    clinicId: string,
+  ) {
     await this.findOne(id, clinicId);
 
     try {
       return await this.prisma.patient.update({
-        where: { id },
+        where: {
+          id,
+        },
         data: {
           ...dto,
-          birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+          birthDate: dto.birthDate
+            ? new Date(dto.birthDate)
+            : undefined,
         },
       });
     } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('CPF ou E-mail já cadastrado nesta clínica.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          'CPF ou E-mail já cadastrado nesta clínica.',
+        );
       }
+
       throw error;
     }
   }
@@ -143,7 +210,9 @@ export class PatientsService {
     await this.findOne(id, clinicId);
 
     return this.prisma.patient.update({
-      where: { id },
+      where: {
+        id,
+      },
       data: {
         deletedAt: new Date(),
       },
