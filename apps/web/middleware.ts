@@ -5,15 +5,23 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('crm_auth_token');
   const { pathname } = request.nextUrl;
 
-  const isAuthRoute = pathname === '/login' || pathname === '/register';
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/register';
 
-  // Se não estiver logado e tentar acessar o app, redireciona para login
-  if (!token && !isAuthRoute) {
+  // Se não estiver logado e tentar acessar uma rota protegida,
+  // redireciona para o login.
+  if (!token && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Se já estiver logado e tentar acessar login/register, redireciona para o app
-  if (token && isAuthRoute) {
+  // Se estiver logado e acessar login/register,
+  // redireciona para o app.
+  if (
+    token &&
+    (pathname === '/login' || pathname === '/register')
+  ) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -22,14 +30,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (svg, png, etc)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png).*)',
   ],
 };
