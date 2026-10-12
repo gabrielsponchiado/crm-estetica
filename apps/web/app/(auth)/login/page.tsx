@@ -211,9 +211,12 @@ export default function LoginPage() {
               )}
 
               <div className="flex justify-end pt-1">
-                <span className="text-xs font-medium text-slate-400">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-slate-400 transition-colors hover:text-rose-600"
+                >
                   Esqueceu a senha?
-                </span>
+                </Link>
               </div>
             </div>
 

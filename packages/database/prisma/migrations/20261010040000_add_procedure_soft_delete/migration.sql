@@ -1,0 +1,2 @@
+ALTER TABLE "Procedure"
+ADD COLUMN "deletedAt" TIMESTAMP(3);
