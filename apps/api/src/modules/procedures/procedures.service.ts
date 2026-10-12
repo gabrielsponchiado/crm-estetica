@@ -23,14 +23,23 @@ export class ProceduresService {
 
   async findAll(clinicId: string) {
     return this.prisma.procedure.findMany({
-      where: { clinicId },
-      orderBy: { name: 'asc' },
+      where: {
+        clinicId,
+        deletedAt: null,
+      },
+      orderBy: {
+        name: 'asc',
+      },
     });
   }
 
   async findOne(id: string, clinicId: string) {
     const procedure = await this.prisma.procedure.findFirst({
-      where: { id, clinicId },
+      where: {
+        id,
+        clinicId,
+        deletedAt: null,
+      },
     });
 
     if (!procedure) {
@@ -40,16 +49,25 @@ export class ProceduresService {
     return procedure;
   }
 
-  async update(id: string, dto: UpdateProcedureDto, clinicId: string) {
+  async update(
+    id: string,
+    dto: UpdateProcedureDto,
+    clinicId: string,
+  ) {
     await this.findOne(id, clinicId);
 
-    const data: Record<string, unknown> = { ...dto };
+    const data: Record<string, unknown> = {
+      ...dto,
+    };
+
     if (dto.price !== undefined) {
       data.price = new Decimal(dto.price);
     }
 
     return this.prisma.procedure.update({
-      where: { id },
+      where: {
+        id,
+      },
       data,
     });
   }
@@ -57,8 +75,13 @@ export class ProceduresService {
   async remove(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
 
-    return this.prisma.procedure.delete({
-      where: { id },
+    return this.prisma.procedure.update({
+      where: {
+        id,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
     });
   }
 }
