@@ -1,27 +1,17 @@
-import Link from 'next/link';
+import { Navbar } from '../components/landing/Navbar';
+import { HeroSection } from '../components/landing/HeroSection';
+import { FeaturesSection } from '../components/landing/FeaturesSection';
+import { Footer } from '../components/landing/Footer';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] p-4 text-center">
-      <h1 className="text-4xl font-bold text-slate-900 mb-2">Estética</h1>
-      <p className="text-slate-600 mb-8 max-w-md">
-        Gerencie seus pacientes, prontuários, fotos de antes e depois e retornos de forma simples.
-      </p>
-
-      <div className="flex gap-4">
-        <Link
-          href="/login"
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition"
-        >
-          Acessar Conta
-        </Link>
-        <Link
-          href="/register"
-          className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium rounded-xl transition"
-        >
-          Cadastre-se
-        </Link>
-      </div>
+    <div className="min-h-screen flex flex-col bg-white font-sans text-stone-900">
+      <Navbar />
+      <main className="flex-1">
+        <HeroSection />
+        <FeaturesSection />
+      </main>
+      <Footer />
     </div>
   );
 }

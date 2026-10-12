@@ -12,10 +12,16 @@ import {
 import { PatientsService, PatientSearchField } from './patients.service';
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
+import { QueryPatientsDto } from '../dto/query-patients.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-const VALID_SEARCH_FIELDS: PatientSearchField[] = ['all', 'name', 'email', 'cpf'];
+const VALID_SEARCH_FIELDS: PatientSearchField[] = [
+  'all',
+  'name',
+  'email',
+  'cpf',
+];
 
 @UseGuards(JwtAuthGuard)
 @Controller('patients')
@@ -33,20 +39,24 @@ export class PatientsController {
   @Get()
   findAll(
     @CurrentUser() user: { userId: string; clinicId: string },
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('search') search?: string,
-    @Query('searchField') searchField?: string,
+    @Query() query: QueryPatientsDto,
   ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+
     const field: PatientSearchField = VALID_SEARCH_FIELDS.includes(
-      searchField as PatientSearchField,
+      query.searchField as PatientSearchField,
     )
-      ? (searchField as PatientSearchField)
+      ? (query.searchField as PatientSearchField)
       : 'all';
 
-    return this.patientsService.findAll(user.clinicId, pageNum, limitNum, search, field);
+    return this.patientsService.findAll(
+      user.clinicId,
+      page,
+      limit,
+      query.search,
+      field,
+    );
   }
 
   @Get(':id')
