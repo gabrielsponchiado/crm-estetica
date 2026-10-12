@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
+
 import {
   Select,
   SelectContent,
@@ -27,12 +28,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { CalendarDays, Check, Clock3, FileText, Plus, Search, Stethoscope, UserRound, X } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Clock3,
+  FileText,
+  Plus,
+  Search,
+  Stethoscope,
+  UserRound,
+  X,
+} from "lucide-react";
 
 interface NewAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (appointment: CreateAppointmentInput) => Promise<{ success: boolean; error?: string }>;
+  onSave: (
+    appointment: CreateAppointmentInput,
+  ) => Promise<{ success: boolean; error?: string }>;
   initialDate?: string;
   appointment?: Appointment | null;
 }
@@ -50,6 +63,7 @@ function getTodayDate() {
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
+
   return `${year}-${month}-${day}`;
 }
 
@@ -62,7 +76,7 @@ export function NewAppointmentModal({
 }: NewAppointmentModalProps) {
   const isEditing = !!appointment;
 
-  const { patients, loading: loadingPatients } = usePatients(500);
+  const { patients, loading: loadingPatients } = usePatients(100);
   const { procedures, loading: loadingProcedures } = useProcedures();
 
   const procedureItems = procedures.map((procedure) => ({
@@ -91,10 +105,13 @@ export function NewAppointmentModal({
     if (!isOpen) return;
 
     const ap = appointment;
+
     setPatientId(ap?.patientId || "");
+
     // Pre-fill search field with current patient name in edit mode
     const currentPatient = patients.find((p) => p.id === ap?.patientId);
     setPatientSearch(currentPatient?.name || "");
+
     setProcedureId(ap?.procedureId || "");
     setDate(ap?.date || initialDate || getTodayDate());
     setStartTime(ap?.startTime || "09:00");
@@ -107,21 +124,30 @@ export function NewAppointmentModal({
   // Close dropdown on outside click
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
-      if (patientRef.current && !patientRef.current.contains(e.target as Node)) {
+      if (
+        patientRef.current &&
+        !patientRef.current.contains(e.target as Node)
+      ) {
         setShowPatientDropdown(false);
       }
     };
+
     document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+    };
   }, []);
 
   // Filtered patient list based on search text
-  const filteredPatients = patientSearch.trim().length >= 1
-    ? patients.filter((p) =>
-        p.name.toLowerCase().includes(patientSearch.toLowerCase()) ||
-        (p.phone && p.phone.includes(patientSearch))
-      )
-    : [];
+  const filteredPatients =
+    patientSearch.trim().length >= 1
+      ? patients.filter(
+          (p) =>
+            p.name.toLowerCase().includes(patientSearch.toLowerCase()) ||
+            (p.phone && p.phone.includes(patientSearch)),
+        )
+      : [];
 
   const selectedPatientName = patients.find((p) => p.id === patientId)?.name;
 
@@ -140,23 +166,40 @@ export function NewAppointmentModal({
 
   const clearError = (field: keyof AppointmentFormErrors) => {
     if (!errors[field]) return;
-    setErrors((previous) => ({ ...previous, [field]: undefined }));
+
+    setErrors((previous) => ({
+      ...previous,
+      [field]: undefined,
+    }));
   };
 
   const validateForm = () => {
     const newErrors: AppointmentFormErrors = {};
 
-    if (!patientId) newErrors.patientId = "Selecione um paciente.";
-    if (!procedureId) newErrors.procedureId = "Selecione um procedimento.";
-    if (!date) newErrors.date = "Informe a data do atendimento.";
-    if (!startTime) newErrors.startTime = "Informe o horário do atendimento.";
+    if (!patientId) {
+      newErrors.patientId = "Selecione um paciente.";
+    }
+
+    if (!procedureId) {
+      newErrors.procedureId = "Selecione um procedimento.";
+    }
+
+    if (!date) {
+      newErrors.date = "Informe a data do atendimento.";
+    }
+
+    if (!startTime) {
+      newErrors.startTime = "Informe o horário do atendimento.";
+    }
 
     const parsedDuration = Number(durationValue);
+
     if (!durationValue || Number.isNaN(parsedDuration) || parsedDuration <= 0) {
       newErrors.durationValue = "Informe uma duração válida.";
     }
 
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
@@ -176,7 +219,9 @@ export function NewAppointmentModal({
     };
 
     setIsSaving(true);
+
     const result = await onSave(payload);
+
     setIsSaving(false);
 
     if (!result.success) {
@@ -188,22 +233,31 @@ export function NewAppointmentModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open: boolean) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
               <CalendarDays className="h-4 w-4 text-primary" />
             </div>
+
             {isEditing ? "Editar Agendamento" : "Novo Agendamento"}
           </DialogTitle>
+
           <DialogDescription>
-            {isEditing ? "Atualize os dados do atendimento." : "Agende um novo atendimento para um paciente da clínica."}
+            {isEditing
+              ? "Atualize os dados do atendimento."
+              : "Agende um novo atendimento para um paciente da clínica."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-5 py-2">
-          {/* ── Paciente ── */}
+          {/* Paciente */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <UserRound className="h-4 w-4 text-primary" />
@@ -213,28 +267,44 @@ export function NewAppointmentModal({
             <FormField label="Paciente" required error={errors.patientId}>
               <div ref={patientRef} className="relative">
                 {/* Search input */}
-                <div className={`flex h-10 items-center rounded-md border bg-background px-3 shadow-sm transition-shadow focus-within:ring-2 ${
-                  errors.patientId
-                    ? "border-destructive focus-within:ring-destructive"
-                    : "border-input focus-within:ring-ring"
-                }`}>
+                <div
+                  className={`flex h-10 items-center rounded-md border bg-background px-3 shadow-sm transition-shadow focus-within:ring-2 ${
+                    errors.patientId
+                      ? "border-destructive focus-within:ring-destructive"
+                      : "border-input focus-within:ring-ring"
+                  }`}
+                >
                   <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+
                   <input
                     type="text"
                     value={patientSearch}
                     onChange={(e) => {
                       setPatientSearch(e.target.value);
                       setShowPatientDropdown(true);
-                      if (!e.target.value) setPatientId("");
+
+                      if (!e.target.value) {
+                        setPatientId("");
+                      }
+
                       clearError("patientId");
                     }}
-                    onFocus={() => { if (patientSearch.trim().length >= 1) setShowPatientDropdown(true); }}
-                    placeholder={loadingPatients ? "Carregando pacientes..." : "Digite o nome do paciente..."}
+                    onFocus={() => {
+                      if (patientSearch.trim().length >= 1) {
+                        setShowPatientDropdown(true);
+                      }
+                    }}
+                    placeholder={
+                      loadingPatients
+                        ? "Carregando pacientes..."
+                        : "Digite o nome do paciente..."
+                    }
                     disabled={loadingPatients}
                     className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
                     autoComplete="off"
                   />
-                  {/* Check mark when patient is selected */}
+
+                  {/* Clear selected patient */}
                   {patientId && (
                     <button
                       type="button"
@@ -251,7 +321,10 @@ export function NewAppointmentModal({
                 {patientId && selectedPatientName && (
                   <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600">
                     <Check className="h-3.5 w-3.5" />
-                    <span className="font-medium">{selectedPatientName} selecionado</span>
+
+                    <span className="font-medium">
+                      {selectedPatientName} selecionado
+                    </span>
                   </div>
                 )}
 
@@ -261,6 +334,7 @@ export function NewAppointmentModal({
                     {filteredPatients.length === 0 ? (
                       <div className="flex flex-col items-center gap-1 py-6 text-center">
                         <UserRound className="h-5 w-5 text-muted-foreground/50" />
+
                         <p className="text-sm text-muted-foreground">
                           Nenhum paciente encontrado para{" "}
                           <span className="font-medium">"{patientSearch}"</span>
@@ -272,8 +346,9 @@ export function NewAppointmentModal({
                           key={patient.id}
                           type="button"
                           onMouseDown={(e) => {
-                            // prevent blur from firing before click
+                            // Prevent blur from firing before click
                             e.preventDefault();
+
                             handleSelectPatient(patient.id, patient.name);
                           }}
                           className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/60 ${
@@ -283,12 +358,19 @@ export function NewAppointmentModal({
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
                             {patient.name.trim().substring(0, 2).toUpperCase()}
                           </div>
+
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-medium text-foreground">{patient.name}</p>
+                            <p className="truncate font-medium text-foreground">
+                              {patient.name}
+                            </p>
+
                             {patient.phone && (
-                              <p className="text-xs text-muted-foreground">{patient.phone}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {patient.phone}
+                              </p>
                             )}
                           </div>
+
                           {patientId === patient.id && (
                             <Check className="h-4 w-4 shrink-0 text-primary" />
                           )}
@@ -301,7 +383,7 @@ export function NewAppointmentModal({
             </FormField>
           </div>
 
-          {/* ── Atendimento ── */}
+          {/* Atendimento */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Stethoscope className="h-4 w-4 text-primary" />
@@ -312,12 +394,16 @@ export function NewAppointmentModal({
               <Select
                 items={procedureItems}
                 value={procedureId || null}
-                onValueChange={(value) => {
+                onValueChange={(value: string) => {
                   if (!value) return;
+
                   setProcedureId(value);
                   clearError("procedureId");
 
-                  const procedure = procedures.find((item) => item.id === value);
+                  const procedure = procedures.find(
+                    (item) => item.id === value,
+                  );
+
                   if (procedure && !isEditing) {
                     setDurationValue(String(procedure.durationMinutes));
                   }
@@ -326,7 +412,9 @@ export function NewAppointmentModal({
               >
                 <SelectTrigger
                   className={`h-10 w-full px-3 text-sm data-[size=default]:h-10 ${
-                    errors.procedureId ? "border-destructive focus:ring-destructive" : ""
+                    errors.procedureId
+                      ? "border-destructive focus:ring-destructive"
+                      : ""
                   }`}
                 >
                   <SelectValue
@@ -337,6 +425,7 @@ export function NewAppointmentModal({
                     }
                   />
                 </SelectTrigger>
+
                 <SelectContent
                   side="bottom"
                   align="start"
@@ -345,7 +434,11 @@ export function NewAppointmentModal({
                   className="w-(--anchor-width)"
                 >
                   {procedureItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value} className="py-2">
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}
+                      className="py-2"
+                    >
                       {item.label}
                     </SelectItem>
                   ))}
@@ -354,7 +447,7 @@ export function NewAppointmentModal({
             </FormField>
           </div>
 
-          {/* ── Horário ── */}
+          {/* Horário */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Clock3 className="h-4 w-4 text-primary" />
@@ -366,8 +459,15 @@ export function NewAppointmentModal({
                 <Input
                   type="date"
                   value={date}
-                  onChange={(event) => { setDate(event.target.value); clearError("date"); }}
-                  className={`h-10 ${errors.date ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  onChange={(event) => {
+                    setDate(event.target.value);
+                    clearError("date");
+                  }}
+                  className={`h-10 ${
+                    errors.date
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }`}
                 />
               </FormField>
 
@@ -375,29 +475,51 @@ export function NewAppointmentModal({
                 <Input
                   type="time"
                   value={startTime}
-                  onChange={(event) => { setStartTime(event.target.value); clearError("startTime"); }}
-                  className={`h-10 ${errors.startTime ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  onChange={(event) => {
+                    setStartTime(event.target.value);
+                    clearError("startTime");
+                  }}
+                  className={`h-10 ${
+                    errors.startTime
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }`}
                 />
               </FormField>
 
-              <FormField label="Duração (min)" required error={errors.durationValue}>
+              <FormField
+                label="Duração (min)"
+                required
+                error={errors.durationValue}
+              >
                 <Input
                   type="number"
                   min="1"
                   step="1"
                   placeholder="60"
                   value={durationValue}
-                  onChange={(event) => { setDurationValue(event.target.value); clearError("durationValue"); }}
-                  className={`h-10 ${errors.durationValue ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  onChange={(event) => {
+                    setDurationValue(event.target.value);
+                    clearError("durationValue");
+                  }}
+                  className={`h-10 ${
+                    errors.durationValue
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }`}
                 />
               </FormField>
             </div>
           </div>
 
-          {/* ── Observações ── */}
-          <FormField label="Observações" description="Informações adicionais sobre o atendimento.">
+          {/* Observações */}
+          <FormField
+            label="Observações"
+            description="Informações adicionais sobre o atendimento."
+          >
             <div className="relative">
               <FileText className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
               <Textarea
                 rows={3}
                 placeholder="Ex: paciente solicitou atendimento no período da tarde..."
@@ -409,15 +531,28 @@ export function NewAppointmentModal({
           </FormField>
 
           {submitError && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{submitError}</p>
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {submitError}
+            </p>
           )}
 
           <DialogFooter className="gap-2 pt-3">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSaving}
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="min-w-[130px] gap-2" disabled={isSaving}>
+
+            <Button
+              type="submit"
+              className="min-w-[130px] gap-2"
+              disabled={isSaving}
+            >
               <Plus className="h-4 w-4" />
+
               {isSaving ? "Salvando..." : isEditing ? "Salvar" : "Agendar"}
             </Button>
           </DialogFooter>
