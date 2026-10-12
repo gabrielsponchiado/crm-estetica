@@ -1,13 +1,19 @@
-import { IsNotEmpty, IsString, IsOptional, IsEmail } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsDateString,
+} from 'class-validator';
 
 export class CreatePatientsDto {
   @IsString()
   @IsNotEmpty({ message: 'O nome do paciente é obrigatório' })
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'O telefone do paciente é obrigatório' })
-  phone: string;
+  phone!: string;
 
   @IsOptional()
   @IsString()
@@ -18,7 +24,7 @@ export class CreatePatientsDto {
   email?: string;
 
   @IsOptional()
-  @IsString()
+  @IsDateString({}, { message: 'Data de nascimento inválida' })
   birthDate?: string;
 
   @IsOptional()
