@@ -7,7 +7,136 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums para garantir tipagem e evitar erros
+model Clinic {
+  id           String        @id @default(uuid())
+  name         String
+  document     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+  patients     Patient[]
+  procedures   Procedure[]
+  users        User[]
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  clinicId            String
+  name                String
+  email               String               @unique
+  password            String
+  role                Role                 @default(ADMIN)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  tokenVersion        Int                  @default(0)
+  appointments        Appointment[]
+  passwordResetTokens PasswordResetToken[]
+  clinic              Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Patient {
+  id           String             @id @default(uuid())
+  clinicId     String
+  name         String
+  phone        String
+  email        String?
+  birthDate    DateTime?
+  cpf          String?
+  address      String?
+  anamnesis    Json?
+  deletedAt    DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  appointments Appointment[]
+  evaluations  Evaluation[]
+  clinic       Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  procedures   PatientProcedure[]
+  quotes       Quote[]
+
+  @@unique([clinicId, cpf])
+  @@unique([clinicId, email])
+}
+
+model Procedure {
+  id                String             @id @default(uuid())
+  clinicId          String
+  name              String
+  description       String?
+  price             Decimal            @db.Decimal(10, 2)
+  durationMinutes   Int                @default(60)
+  recommendedMonths Int?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  deletedAt         DateTime?
+  appointments      Appointment[]
+  patientProcedures PatientProcedure[]
+  clinic            Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+}
+
+model PatientProcedure {
+  id           String    @id @default(uuid())
+  patientId    String
+  procedureId  String
+  performedAt  DateTime
+  nextReturnAt DateTime?
+  notified     Boolean   @default(false)
+  patient      Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  procedure    Procedure @relation(fields: [procedureId], references: [id])
+}
+
+model Evaluation {
+  id           String   @id @default(uuid())
+  patientId    String
+  title        String?
+  notes        String
+  beforePhotos String[]
+  afterPhotos  String[]
+  createdAt    DateTime @default(now())
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Quote {
+  id         String      @id @default(uuid())
+  patientId  String
+  totalValue Decimal     @db.Decimal(10, 2)
+  status     QuoteStatus @default(PENDING)
+  details    Json
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  patient    Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  clinicId        String
+  patientId       String
+  userId          String?
+  procedureId     String?
+  scheduledAt     DateTime
+  durationMinutes Int               @default(60)
+  status          AppointmentStatus @default(SCHEDULED)
+  notes           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  clinic          Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient         Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  procedure       Procedure?        @relation(fields: [procedureId], references: [id])
+  user            User?             @relation(fields: [userId], references: [id])
+}
+
 enum Role {
   ADMIN
   RECEPTIONIST
@@ -28,140 +157,4 @@ enum QuoteStatus {
   APPROVED
   REJECTED
   EXPIRED
-}
-
-// Tenant / Clínica (Isolamento de dados)
-model Clinic {
-  id        String   @id @default(uuid())
-  name      String
-  document  String?  // CNPJ / CPF
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users        User[]
-  patients     Patient[]
-  procedures   Procedure[]
-  appointments Appointment[]
-}
-
-// Usuários do sistema (Autenticação)
-model User {
-  id           String        @id @default(uuid())
-  clinicId     String
-  name         String
-  email        String        @unique
-  password     String
-  role         Role          @default(ADMIN)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-}
-
-// Pacientes da clínica
-model Patient {
-  id          String    @id @default(uuid())
-  clinicId    String
-  name        String
-  phone       String
-  email       String?
-  birthDate   DateTime?
-  cpf         String?   // Removed global @unique, as CPF can exist in different clinics
-  address     String?
-
-  // Ficha de anamnese (histórico de saúde, alergias, remédios, etc)
-  anamnesis   Json?
-
-  // Soft delete: guarda a data de exclusão em vez de apagar do banco
-  deletedAt   DateTime?
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  clinic      Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  evaluations Evaluation[]
-  quotes      Quote[]
-  procedures  PatientProcedure[]
-  appointments Appointment[]
-
-  @@unique([clinicId, cpf]) // Garante CPF único por clínica
-  @@unique([clinicId, email]) // Garante Email único por clínica
-}
-
-// Catálogo de procedimentos estéticos
-model Procedure {
-  id                String             @id @default(uuid())
-  clinicId          String
-  name              String
-  description       String?
-  price             Decimal            @db.Decimal(10, 2)
-  durationMinutes   Int                @default(60)
-  recommendedMonths Int?               // Intervalo opcional p/ retorno
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-
-  clinic            Clinic             @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patientProcedures PatientProcedure[]
-  appointments      Appointment[]
-}
-
-// Procedimentos realizados no paciente
-model PatientProcedure {
-  id           String    @id @default(uuid())
-  patientId    String
-  procedureId  String
-  performedAt  DateTime
-  nextReturnAt DateTime?
-  notified     Boolean   @default(false)
-
-  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  procedure Procedure @relation(fields: [procedureId], references: [id])
-}
-
-// Avaliações / Sessões (Fotos Antes & Depois)
-model Evaluation {
-  id           String   @id @default(uuid())
-  patientId    String
-  title        String?  // Ex: "Avaliação inicial", "Retorno Botox"
-  notes        String
-  beforePhotos String[]
-  afterPhotos  String[]
-  createdAt    DateTime @default(now())
-
-  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-}
-
-// Orçamentos
-model Quote {
-  id         String      @id @default(uuid())
-  patientId  String
-  totalValue Decimal     @db.Decimal(10, 2)
-  status     QuoteStatus @default(PENDING)
-  details    Json        // Itens do orçamento flexíveis
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-
-  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-}
-
-// Agenda de Consultas / Atendimentos
-model Appointment {
-  id              String            @id @default(uuid())
-  clinicId        String
-  patientId       String
-  userId          String?           // Profissional responsável
-  procedureId     String?
-  scheduledAt     DateTime
-  durationMinutes Int               @default(60)
-  status          AppointmentStatus @default(SCHEDULED)
-  notes           String?
-
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  clinic    Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient   Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  user      User?      @relation(fields: [userId], references: [id])
-  procedure Procedure? @relation(fields: [procedureId], references: [id])
 }

@@ -6,14 +6,17 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 const cookieExtractor = (req: Request) => {
   let token = null;
+
   if (req && req.cookies) {
     token = req.cookies['crm_auth_token'];
   }
+
   return token || ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 };
 
 interface JwtPayload {
   sub: string;
+  tokenVersion: number;
 }
 
 @Injectable()
@@ -36,6 +39,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
 
     if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    if (payload.tokenVersion !== user.tokenVersion) {
       throw new UnauthorizedException();
     }
 

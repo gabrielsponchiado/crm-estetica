@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconSparkles } from '@tabler/icons-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { fetcher } from '@/lib/api';
 
 import {
@@ -23,12 +25,12 @@ export default function RegisterPage() {
   });
 
   const router = useRouter();
-  const [authError, setAuthError] = useState<string | null>(null);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (data: RegisterInput) => {
-    // confirmPassword é só para validação local, não deve ir para o backend
     const { confirmPassword, ...payload } = data;
-    setAuthError(null);
 
     try {
       await fetcher('/auth/register', {
@@ -37,42 +39,92 @@ export default function RegisterPage() {
       });
 
       router.push('/login');
-    } catch (err: any) {
-      setAuthError(err.message || 'Erro ao criar conta. Tente novamente.');
+    } catch {
+      toast.error('Não foi possível criar sua conta', {
+        description:
+          'Verifique os dados informados e tente novamente.',
+      });
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4 py-8 relative overflow-hidden">
-      {/* Decoração de fundo */}
-      <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-rose-100/60 blur-3xl" />
-      <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-rose-50 blur-3xl" />
+    <main className="flex min-h-screen w-full overflow-hidden bg-[#faf9f8]">
+      {/* Painel esquerdo */}
+      <section className="relative hidden min-h-screen w-1/2 overflow-hidden bg-[#f2e7e7] lg:flex">
+        <div className="absolute -left-40 top-36 h-[560px] w-[560px] rounded-full border border-white/70" />
 
-      <div className="relative w-full max-w-[420px]">
-        <div className="bg-white border border-neutral-200/80 rounded-2xl shadow-sm px-7 py-8 sm:px-9 sm:py-9">
+        <div className="absolute -left-28 top-56 h-[400px] w-[400px] rounded-full border border-white/60" />
 
-          {/* Logo / identidade */}
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-600 shadow-sm shadow-rose-200">
-              <IconSparkles className="h-6 w-6 text-white" />
+        <div className="absolute -bottom-52 right-[-80px] h-[480px] w-[480px] rounded-full bg-[#e7cccc]/70" />
+
+        <div className="absolute right-[-100px] top-[-120px] h-[300px] w-[300px] rounded-full border border-white/60" />
+
+        <div className="relative z-10 flex w-full flex-col justify-between px-14 py-14 xl:px-[8%]">
+          <div>
+            <div className="flex items-center gap-3 text-xs font-medium tracking-[0.18em] text-slate-500">
+              <span className="h-2 w-2 rounded-full bg-rose-600" />
+              GESTÃO PARA CLÍNICAS
             </div>
+          </div>
 
-            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-900">
+          <div className="max-w-[590px] -translate-y-8">
+            <p className="mb-6 text-sm font-medium text-slate-500">
+              Simples. Organizado. Profissional.
+            </p>
+
+            <h2 className="text-5xl font-semibold leading-[1.05] tracking-[-0.035em] text-slate-900 xl:text-[58px]">
+              Mais tempo para
+              <br />
+              <span className="text-rose-600">
+                cuidar do que importa.
+              </span>
+            </h2>
+
+            <p className="mt-8 max-w-[500px] text-[15px] leading-7 text-slate-600">
+              Uma forma mais simples de organizar a rotina da sua clínica,
+              acompanhar seus pacientes e manter tudo no lugar.
+            </p>
+
+            <div className="mt-10 flex items-center gap-5">
+              <span className="h-px w-12 bg-rose-500" />
+
+              <span className="text-[11px] font-medium tracking-[0.22em] text-slate-500">
+                FEITO PARA A ROTINA REAL
+              </span>
+            </div>
+          </div>
+
+          <div />
+        </div>
+      </section>
+
+      {/* Área do cadastro */}
+      <section className="relative flex min-h-screen w-full min-w-0 flex-1 items-center justify-center overflow-hidden bg-[#faf9f8] px-6 py-12 lg:w-1/2 lg:flex-none">
+        {/* Decoração */}
+        <div className="pointer-events-none absolute -right-40 -top-40 h-[420px] w-[420px] rounded-full bg-rose-100/30 blur-3xl" />
+
+        {/* Conteúdo */}
+        <div className="relative z-10 w-full max-w-[365px]">
+          <div className="mb-8">
+            <p className="mb-3 text-sm font-medium text-rose-600">
+              Vamos começar
+            </p>
+
+            <h1 className="text-[32px] font-semibold tracking-[-0.025em] text-slate-900">
               Crie sua conta
             </h1>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Configure seu acesso ao sistema
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Configure seu acesso e comece a organizar sua clínica.
             </p>
           </div>
 
-          {/* Formulário */}
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
+            className="space-y-4"
           >
             {/* Nome */}
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               <label
                 htmlFor="name"
                 className="text-sm font-medium text-slate-700"
@@ -84,12 +136,12 @@ export default function RegisterPage() {
                 id="name"
                 type="text"
                 autoComplete="name"
-                {...register('name')}
                 placeholder="Seu nome"
-                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                {...register('name')}
+                className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 ${
                   errors.name
-                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
-                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                    ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-50'
                 }`}
               />
 
@@ -100,25 +152,25 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Nome da Clínica */}
-            <div className="flex flex-col gap-2">
+            {/* Nome da clínica */}
+            <div className="space-y-2">
               <label
                 htmlFor="clinicName"
                 className="text-sm font-medium text-slate-700"
               >
-                Nome da Clínica
+                Nome da clínica
               </label>
 
               <input
                 id="clinicName"
                 type="text"
                 autoComplete="organization"
-                {...register('clinicName')}
                 placeholder="Ex: Clínica Bella"
-                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                {...register('clinicName')}
+                className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 ${
                   errors.clinicName
-                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
-                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                    ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-50'
                 }`}
               />
 
@@ -129,8 +181,8 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Email */}
-            <div className="flex flex-col gap-2">
+            {/* E-mail */}
+            <div className="space-y-2">
               <label
                 htmlFor="email"
                 className="text-sm font-medium text-slate-700"
@@ -142,12 +194,12 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                {...register('email')}
                 placeholder="seu@email.com"
-                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
+                {...register('email')}
+                className={`h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 ${
                   errors.email
-                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
-                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
+                    ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
+                    : 'border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-50'
                 }`}
               />
 
@@ -159,7 +211,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Senha */}
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               <label
                 htmlFor="password"
                 className="text-sm font-medium text-slate-700"
@@ -167,18 +219,39 @@ export default function RegisterPage() {
                 Senha
               </label>
 
-              <input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                {...register('password')}
-                placeholder="Mínimo de 8 caracteres"
-                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
-                  errors.password
-                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
-                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  placeholder="Mínimo de 8 caracteres"
+                  {...register('password')}
+                  className={`h-11 w-full rounded-xl border bg-white px-3.5 pr-11 text-sm text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 ${
+                    errors.password
+                      ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
+                      : 'border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-50'
+                  }`}
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword((prev) => !prev)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
+                  aria-label={
+                    showPassword
+                      ? 'Ocultar senha'
+                      : 'Mostrar senha'
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
 
               {errors.password && (
                 <p className="text-xs text-red-600">
@@ -188,7 +261,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Confirmar senha */}
-            <div className="flex flex-col gap-2">
+            <div className="space-y-2">
               <label
                 htmlFor="confirmPassword"
                 className="text-sm font-medium text-slate-700"
@@ -196,18 +269,41 @@ export default function RegisterPage() {
                 Confirmar senha
               </label>
 
-              <input
-                id="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                {...register('confirmPassword')}
-                placeholder="Digite sua senha novamente"
-                className={`w-full h-11 px-3.5 rounded-xl bg-white text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all border ${
-                  errors.confirmPassword
-                    ? 'border-red-300 focus:ring-2 focus:ring-red-100'
-                    : 'border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-100'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={
+                    showConfirmPassword ? 'text' : 'password'
+                  }
+                  autoComplete="new-password"
+                  placeholder="Digite sua senha novamente"
+                  {...register('confirmPassword')}
+                  className={`h-11 w-full rounded-xl border bg-white px-3.5 pr-11 text-sm text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition-all placeholder:text-slate-400 ${
+                    errors.confirmPassword
+                      ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100'
+                      : 'border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-50'
+                  }`}
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPassword((prev) => !prev)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
+                  aria-label={
+                    showConfirmPassword
+                      ? 'Ocultar confirmação da senha'
+                      : 'Mostrar confirmação da senha'
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
 
               {errors.confirmPassword && (
                 <p className="text-xs text-red-600">
@@ -220,38 +316,33 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-11 mt-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white text-sm font-medium shadow-sm shadow-rose-200 transition-all"
+              className="mt-2 flex h-11 w-full items-center justify-center rounded-xl bg-rose-600 text-sm font-medium text-white shadow-[0_4px_12px_rgba(225,29,72,0.14)] transition-all hover:bg-rose-700 hover:shadow-[0_5px_14px_rgba(225,29,72,0.18)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
             >
-              {isSubmitting ? 'Criando conta...' : 'Criar conta'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando conta...
+                </>
+              ) : (
+                'Criar conta'
+              )}
             </button>
-
-            {/* Erro de criação */}
-            {authError && (
-              <p className="text-center text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg py-2 px-3">
-                {authError}
-              </p>
-            )}
           </form>
 
-
           {/* Login */}
-          <div className="mt-7 pt-6 border-t border-slate-100 text-center">
+          <div className="mt-8 text-center">
             <p className="text-sm text-slate-500">
               Já possui uma conta?{' '}
               <Link
                 href="/login"
-                className="font-semibold text-rose-600 hover:text-rose-700 hover:underline underline-offset-2 transition-colors"
+                className="font-semibold text-rose-600 transition-colors hover:text-rose-700"
               >
                 Fazer login
               </Link>
             </p>
           </div>
         </div>
-
-        <p className="mt-5 text-center text-xs text-slate-400">
-          Sistema de gestão para clínica estética
-        </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { toast } from "sonner";
 import {
   ApiProcedure,
   Procedure,
@@ -49,7 +50,9 @@ export function useProcedures() {
     try {
       setLoading(true);
       setError(null);
+
       const data = await fetcher<ApiProcedure[]>("/procedures");
+
       if (Array.isArray(data)) {
         setProcedures(data.map(normalizeProcedure));
       } else {
@@ -57,6 +60,7 @@ export function useProcedures() {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro desconhecido";
+
       console.error("Erro ao buscar procedimentos da API:", message);
       setError("Falha ao conectar com a API de procedimentos.");
       setProcedures([]);
@@ -70,19 +74,28 @@ export function useProcedures() {
   }, [fetchProcedures]);
 
   // Cria um novo procedimento
-  const createProcedure = async (input: CreateProcedureInput): Promise<boolean> => {
+  const createProcedure = async (
+    input: CreateProcedureInput,
+  ): Promise<boolean> => {
     setIsSubmitting(true);
+
     try {
       const created = await fetcher<ApiProcedure>("/procedures", {
         method: "POST",
         body: JSON.stringify(input),
       });
+
       setProcedures((prev) => [normalizeProcedure(created), ...prev]);
+
       return true;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao salvar procedimento.";
+      const message =
+        err instanceof Error ? err.message : "Erro ao salvar procedimento.";
+
       console.error("Erro ao criar procedimento:", message);
       setError(message);
+      toast.error(message);
+
       return false;
     } finally {
       setIsSubmitting(false);
@@ -90,20 +103,31 @@ export function useProcedures() {
   };
 
   // Atualiza um procedimento existente
-  const updateProcedure = async (id: string, input: UpdateProcedureInput): Promise<boolean> => {
+  const updateProcedure = async (
+    id: string,
+    input: UpdateProcedureInput,
+  ): Promise<boolean> => {
     setIsSubmitting(true);
+
     try {
       const updated = await fetcher<ApiProcedure>(`/procedures/${id}`, {
         method: "PATCH",
         body: JSON.stringify(input),
       });
+
       const normalized = normalizeProcedure(updated);
+
       setProcedures((prev) => prev.map((p) => (p.id === id ? normalized : p)));
+
       return true;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao atualizar procedimento.";
+      const message =
+        err instanceof Error ? err.message : "Erro ao atualizar procedimento.";
+
       console.error("Erro ao atualizar procedimento:", message);
       setError(message);
+      toast.error(message);
+
       return false;
     } finally {
       setIsSubmitting(false);
@@ -113,13 +137,21 @@ export function useProcedures() {
   // Exclui um procedimento
   const deleteProcedure = async (id: string): Promise<boolean> => {
     try {
-      await fetcher(`/procedures/${id}`, { method: "DELETE" });
+      await fetcher(`/procedures/${id}`, {
+        method: "DELETE",
+      });
+
       setProcedures((prev) => prev.filter((p) => p.id !== id));
+
       return true;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao remover procedimento.";
+      const message =
+        err instanceof Error ? err.message : "Erro ao remover procedimento.";
+
       console.error("Erro ao excluir procedimento:", message);
       setError(message);
+      toast.error(message);
+
       return false;
     }
   };
@@ -130,13 +162,16 @@ export function useProcedures() {
       (p) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.description &&
-          p.description.toLowerCase().includes(searchTerm.toLowerCase()))
+          p.description.toLowerCase().includes(searchTerm.toLowerCase())),
     );
 
     return list.sort((a, b) => {
       if (sortBy === "price-asc") return a.price - b.price;
       if (sortBy === "price-desc") return b.price - a.price;
-      if (sortBy === "duration") return a.durationMinutes - b.durationMinutes;
+      if (sortBy === "duration") {
+        return a.durationMinutes - b.durationMinutes;
+      }
+
       return a.name.localeCompare(b.name);
     });
   }, [procedures, searchTerm, sortBy]);
@@ -144,11 +179,21 @@ export function useProcedures() {
   // Estatísticas calculadas para a barra de métricas do SaaS
   const stats: ProcedureStats = useMemo(() => {
     const total = procedures.length;
+
     if (total === 0) {
-      return { total: 0, averagePrice: 0, averageDuration: 0 };
+      return {
+        total: 0,
+        averagePrice: 0,
+        averageDuration: 0,
+      };
     }
+
     const totalPrice = procedures.reduce((acc, p) => acc + p.price, 0);
-    const totalDuration = procedures.reduce((acc, p) => acc + p.durationMinutes, 0);
+
+    const totalDuration = procedures.reduce(
+      (acc, p) => acc + p.durationMinutes,
+      0,
+    );
 
     return {
       total,

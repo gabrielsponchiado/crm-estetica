@@ -48,7 +48,7 @@ export function usePatients(itemsPerPage = 10) {
 
       const params = new URLSearchParams({
         page: String(currentPage),
-        limit: String(itemsPerPage),
+        limit: String(Math.min(itemsPerPage, 100)),
       });
 
       if (searchTerm.trim()) {

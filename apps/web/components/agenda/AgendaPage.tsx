@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 import { useAgenda } from "@/hooks/useAgenda";
 import { useAppointments } from "@/hooks/useAppointments";
-import type { Appointment, CreateAppointmentInput } from "@/types/appointment";
-import type { AppointmentStatus } from "@/types/appointment";
+import type {
+  Appointment,
+  AppointmentStatus,
+  CreateAppointmentInput,
+} from "@/types/appointment";
 
 import { AgendaHeader } from "./AgendaHeader";
 import { AgendaToolbar } from "./AgendaToolbar";
@@ -30,12 +34,19 @@ export function AgendaPage() {
     createAppointment,
     updateAppointment,
     updateAppointmentStatus,
-  } = useAppointments({ startDate: agenda.rangeStart, endDate: agenda.rangeEnd });
+  } = useAppointments({
+    startDate: agenda.rangeStart,
+    endDate: agenda.rangeEnd,
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalInitialDate, setModalInitialDate] = useState<string | undefined>();
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [modalInitialDate, setModalInitialDate] = useState<
+    string | undefined
+  >();
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const openNewAppointment = (date?: Date) => {
@@ -50,21 +61,82 @@ export function AgendaPage() {
     setIsModalOpen(true);
   };
 
-  const handleSave = (data: CreateAppointmentInput) =>
-    editingAppointment ? updateAppointment(editingAppointment.id, data) : createAppointment(data);
+  const handleSave = async (data: CreateAppointmentInput) => {
+    const result = editingAppointment
+      ? await updateAppointment(editingAppointment.id, data)
+      : await createAppointment(data);
+
+    if (!result.success) {
+      toast.error(
+        editingAppointment
+          ? "Não foi possível atualizar o agendamento."
+          : "Não foi possível criar o agendamento.",
+        {
+          description: result.error || "Verifique os dados e tente novamente.",
+        },
+      );
+
+      return result;
+    }
+
+    toast.success(
+      editingAppointment
+        ? "Agendamento atualizado com sucesso."
+        : "Agendamento criado com sucesso.",
+    );
+
+    setEditingAppointment(null);
+
+    return result;
+  };
 
   const handleCancel = async (appointment: Appointment) => {
     setCancellingId(appointment.id);
-    await updateAppointmentStatus(appointment.id, "CANCELED");
+
+    const result = await updateAppointmentStatus(appointment.id, "CANCELED");
+
     setCancellingId(null);
+
+    if (!result.success) {
+      toast.error("Não foi possível cancelar o agendamento.", {
+        description: result.error || "Tente novamente em alguns instantes.",
+      });
+
+      return;
+    }
+
+    toast.success("Agendamento cancelado com sucesso.");
     setSelectedAppointment(null);
   };
 
-  const handleStatusChange = async (appointment: Appointment, status: AppointmentStatus) => {
+  const handleStatusChange = async (
+    appointment: Appointment,
+    status: AppointmentStatus,
+  ) => {
     setCancellingId(appointment.id);
-    await updateAppointmentStatus(appointment.id, status);
+
+    const result = await updateAppointmentStatus(appointment.id, status);
+
     setCancellingId(null);
-    setSelectedAppointment((prev) => prev ? { ...prev, status } : null);
+
+    if (!result.success) {
+      toast.error("Não foi possível atualizar o status.", {
+        description: result.error || "Tente novamente em alguns instantes.",
+      });
+
+      return;
+    }
+
+    toast.success("Status atualizado com sucesso.");
+
+    setSelectedAppointment((previous) =>
+      previous
+        ? {
+            ...previous,
+            status,
+          }
+        : null,
+    );
   };
 
   return (
@@ -88,7 +160,9 @@ export function AgendaPage() {
             <Skeleton className="h-24 w-full" />
           </div>
         ) : error ? (
-          <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">{error}</div>
+          <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+            {error}
+          </div>
         ) : (
           <div className="flex flex-1 flex-col overflow-y-auto">
             {agenda.viewMode === "month" && (
@@ -130,7 +204,10 @@ export function AgendaPage() {
 
       <NewAppointmentModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAppointment(null);
+        }}
         onSave={handleSave}
         initialDate={modalInitialDate}
         appointment={editingAppointment}

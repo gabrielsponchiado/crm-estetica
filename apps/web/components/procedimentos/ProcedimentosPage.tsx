@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
 import { ProcedureModal } from "./NewProcedureModal";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+
 import {
   Plus,
   Search,
@@ -46,14 +49,21 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
-import { toast } from "@/components/ui/toast";
+
+import { toast } from "sonner";
+
 import {
   useProcedures,
   Procedure,
   CreateProcedureInput,
 } from "@/hooks/useProcedures";
 
+import { useAuth } from "@/store/useAuth";
+
 export function ProcedimentosPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   const {
     procedures,
     loading,
@@ -68,26 +78,24 @@ export function ProcedimentosPage() {
     deleteProcedure,
   } = useProcedures();
 
-  // Estados dos Modais
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProcedure, setSelectedProcedure] = useState<Procedure | null>(
-    null,
-  );
+  const [selectedProcedure, setSelectedProcedure] =
+    useState<Procedure | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Formatação de duração
   const formatDuration = (minutes: number) => {
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
+
       return remainingMinutes > 0
         ? `${hours}h ${remainingMinutes}min`
         : `${hours}h`;
     }
+
     return `${minutes} min`;
   };
 
-  // Handlers de Ações
   const handleOpenCreateModal = () => {
     setSelectedProcedure(null);
     setIsModalOpen(true);
@@ -106,41 +114,64 @@ export function ProcedimentosPage() {
       description: procedure.description,
       recommendedMonths: procedure.recommendedMonths,
     });
+
     if (success) {
-      toast.add({ title: "Procedimento duplicado", description: "Cópia criada com sucesso.", type: "success" });
+      toast.success("Procedimento duplicado", {
+        description: "Cópia criada com sucesso.",
+      });
     } else {
-      toast.add({ title: "Erro", description: "Falha ao duplicar procedimento.", type: "error" });
+      toast.error("Erro", {
+        description: "Falha ao duplicar procedimento.",
+      });
     }
   };
 
   const handleSaveModal = async (data: CreateProcedureInput) => {
     let success = false;
+
     if (selectedProcedure) {
       success = await updateProcedure(selectedProcedure.id, data);
+
       if (success) {
-        toast.add({ title: "Procedimento atualizado", description: "Informações salvas com sucesso.", type: "success" });
+        toast.success("Procedimento atualizado", {
+          description: "Informações salvas com sucesso.",
+        });
       } else {
-        toast.add({ title: "Erro", description: "Falha ao atualizar.", type: "error" });
+        toast.error("Erro", {
+          description: "Falha ao atualizar.",
+        });
       }
     } else {
       success = await createProcedure(data);
+
       if (success) {
-        toast.add({ title: "Procedimento criado", description: "Novo procedimento adicionado com sucesso.", type: "success" });
+        toast.success("Procedimento criado", {
+          description: "Novo procedimento adicionado com sucesso.",
+        });
       } else {
-        toast.add({ title: "Erro", description: "Falha ao criar.", type: "error" });
+        toast.error("Erro", {
+          description: "Falha ao criar procedimento.",
+        });
       }
     }
+
     return success;
   };
 
   const handleConfirmDelete = async () => {
     if (deletingId) {
       const success = await deleteProcedure(deletingId);
+
       if (success) {
-        toast.add({ title: "Procedimento excluído", description: "Removido do catálogo.", type: "success" });
+        toast.success("Procedimento excluído", {
+          description: "Removido do catálogo.",
+        });
       } else {
-        toast.add({ title: "Erro", description: "Falha ao excluir procedimento.", type: "error" });
+        toast.error("Erro", {
+          description: "Falha ao excluir procedimento.",
+        });
       }
+
       setDeletingId(null);
     }
   };
@@ -155,19 +186,25 @@ export function ProcedimentosPage() {
           </div>
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Procedimentos</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Procedimentos
+            </h1>
+
             <p className="text-sm text-muted-foreground">
               Gerencie os tratamentos estéticos, durações e preços.
             </p>
           </div>
         </div>
 
-        <Button
-          onClick={handleOpenCreateModal}
-          className="h-10 gap-2 rounded-lg px-4 shadow-sm font-semibold"
-        >
-          <Plus className="w-4 h-4" /> Criar Procedimento
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={handleOpenCreateModal}
+            className="h-10 gap-2 rounded-lg px-4 shadow-sm font-semibold"
+          >
+            <Plus className="w-4 h-4" />
+            Criar Procedimento
+          </Button>
+        )}
       </header>
 
       {/* Cards de Métricas */}
@@ -177,10 +214,12 @@ export function ProcedimentosPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0">
               <Layers className="w-4 h-4" />
             </div>
+
             <div>
               <p className="text-xs text-muted-foreground font-medium">
                 Total de Procedimentos
               </p>
+
               <h3 className="text-xl font-semibold text-foreground">
                 {loading ? "..." : stats.total}
               </h3>
@@ -193,10 +232,12 @@ export function ProcedimentosPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0">
               <DollarSign className="w-4 h-4" />
             </div>
+
             <div>
               <p className="text-xs text-muted-foreground font-medium">
                 Preço Médio por Serviço
               </p>
+
               <h3 className="text-xl font-semibold text-foreground">
                 {loading
                   ? "..."
@@ -214,10 +255,12 @@ export function ProcedimentosPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground shrink-0">
               <TrendingUp className="w-4 h-4" />
             </div>
+
             <div>
               <p className="text-xs text-muted-foreground font-medium">
                 Duração Média
               </p>
+
               <h3 className="text-xl font-semibold text-foreground">
                 {loading ? "..." : formatDuration(stats.averageDuration)}
               </h3>
@@ -230,6 +273,7 @@ export function ProcedimentosPage() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-3 rounded-xl border shadow-xs">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
           <Input
             type="text"
             placeholder="Buscar procedimento por nome ou descrição..."
@@ -238,6 +282,7 @@ export function ProcedimentosPage() {
             maxLength={50}
             className="pl-9 pr-8"
           />
+
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
@@ -250,6 +295,7 @@ export function ProcedimentosPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
@@ -258,7 +304,9 @@ export function ProcedimentosPage() {
             <option value="name">Ordenar por: Nome (A-Z)</option>
             <option value="price-asc">Preço: Menor ao Maior</option>
             <option value="price-desc">Preço: Maior ao Menor</option>
-            <option value="duration">Duração: Mais rápido ao mais longo</option>
+            <option value="duration">
+              Duração: Mais rápido ao mais longo
+            </option>
           </select>
         </div>
       </div>
@@ -271,6 +319,7 @@ export function ProcedimentosPage() {
               <Skeleton className="h-6 w-3/4 rounded-md" />
               <Skeleton className="h-4 w-full rounded-md" />
               <Skeleton className="h-4 w-2/3 rounded-md" />
+
               <div className="pt-4 border-t flex justify-between">
                 <Skeleton className="h-5 w-20 rounded-md" />
                 <Skeleton className="h-6 w-24 rounded-full" />
@@ -291,34 +340,41 @@ export function ProcedimentosPage() {
                     {proc.name}
                   </CardTitle>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="h-7 w-7 flex items-center justify-center rounded-md -mr-1 -mt-1 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer transition">
-                      <MoreVertical className="w-4 h-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        onClick={() => handleOpenEditModal(proc)}
-                        className="cursor-pointer"
-                      >
-                        <Edit3 className="w-4 h-4 mr-2 text-muted-foreground" />{" "}
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDuplicate(proc)}
-                        className="cursor-pointer"
-                      >
-                        <Copy className="w-4 h-4 mr-2 text-muted-foreground" />{" "}
-                        Duplicar
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => setDeletingId(proc.id)}
-                        className="text-destructive focus:text-destructive cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {isAdmin && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="h-7 w-7 flex items-center justify-center rounded-md -mr-1 -mt-1 text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer transition">
+                        <MoreVertical className="w-4 h-4" />
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          onClick={() => handleOpenEditModal(proc)}
+                          className="cursor-pointer"
+                        >
+                          <Edit3 className="w-4 h-4 mr-2 text-muted-foreground" />
+                          Editar
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={() => handleDuplicate(proc)}
+                          className="cursor-pointer"
+                        >
+                          <Copy className="w-4 h-4 mr-2 text-muted-foreground" />
+                          Duplicar
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem
+                          onClick={() => setDeletingId(proc.id)}
+                          className="text-destructive focus:text-destructive cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
 
                 <CardDescription className="line-clamp-2 text-xs leading-relaxed">
@@ -349,6 +405,7 @@ export function ProcedimentosPage() {
                 <span className="text-xs text-muted-foreground font-medium">
                   Valor do serviço
                 </span>
+
                 <span className="text-sm font-semibold text-foreground">
                   {proc.price.toLocaleString("pt-BR", {
                     style: "currency",
@@ -364,16 +421,19 @@ export function ProcedimentosPage() {
           <div className="p-3 rounded-full bg-muted text-muted-foreground">
             <Sparkles className="w-6 h-6" />
           </div>
+
           <div className="space-y-1">
             <h3 className="text-base font-semibold text-foreground">
               Nenhum procedimento encontrado
             </h3>
+
             <p className="text-xs text-muted-foreground max-w-sm">
               {searchTerm
                 ? "Nenhum procedimento corresponde à sua busca."
                 : "Você ainda não cadastrou nenhum procedimento no catálogo da clínica."}
             </p>
           </div>
+
           {searchTerm ? (
             <Button
               variant="outline"
@@ -383,13 +443,16 @@ export function ProcedimentosPage() {
               Limpar busca
             </Button>
           ) : (
-            <Button
-              size="sm"
-              onClick={handleOpenCreateModal}
-              className="gap-1.5 mt-2"
-            >
-              <Plus className="w-4 h-4" /> Cadastrar Primeiro Procedimento
-            </Button>
+            isAdmin && (
+              <Button
+                size="sm"
+                onClick={handleOpenCreateModal}
+                className="gap-1.5 mt-2"
+              >
+                <Plus className="w-4 h-4" />
+                Cadastrar Primeiro Procedimento
+              </Button>
+            )
           )}
         </Card>
       )}
@@ -411,18 +474,28 @@ export function ProcedimentosPage() {
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" /> Excluir Procedimento?
+              <AlertTriangle className="w-5 h-5" />
+              Excluir Procedimento?
             </DialogTitle>
+
             <DialogDescription className="text-sm">
-              Esta ação removerá este procedimento do catálogo da clínica. Esta
-              ação não poderá ser desfeita.
+              Esta ação removerá este procedimento do catálogo da clínica.
+              Esta ação não poderá ser desfeita.
             </DialogDescription>
           </DialogHeader>
+
           <DialogFooter className="gap-2 pt-2">
-            <Button variant="outline" onClick={() => setDeletingId(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeletingId(null)}
+            >
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
+
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
               Excluir Definitivamente
             </Button>
           </DialogFooter>

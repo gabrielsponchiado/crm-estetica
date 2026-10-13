@@ -12,7 +12,12 @@ import type {
   UpdateAppointmentInput,
 } from "@/types/appointment";
 
-export type { Appointment, AppointmentStatus, CreateAppointmentInput, UpdateAppointmentInput };
+export type {
+  Appointment,
+  AppointmentStatus,
+  CreateAppointmentInput,
+  UpdateAppointmentInput,
+};
 
 interface UseAppointmentsOptions {
   startDate?: Date;
@@ -41,7 +46,10 @@ function toScheduledAtISO(date: string, startTime: string) {
   return new Date(`${date}T${startTime}:00`).toISOString();
 }
 
-export function useAppointments({ startDate, endDate }: UseAppointmentsOptions = {}) {
+export function useAppointments({
+  startDate,
+  endDate,
+}: UseAppointmentsOptions = {}) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -56,18 +64,18 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
       setError(null);
 
       const params = new URLSearchParams();
+
       if (startKey) params.append("startDate", startKey);
       if (endKey) params.append("endDate", endKey);
 
       const query = params.toString();
+
       const data = await fetcher<ApiAppointment[]>(
-        `/agenda${query ? `?${query}` : ""}`
+        `/agenda${query ? `?${query}` : ""}`,
       );
+
       setAppointments(data.map(normalizeAppointment));
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Erro desconhecido ao carregar a agenda.";
-      console.error("Erro ao buscar agendamentos:", message);
+    } catch {
       setError("Não foi possível carregar a agenda.");
     } finally {
       setLoading(false);
@@ -88,19 +96,42 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
 
   const stats = useMemo(() => {
     const total = appointments.length;
-    const confirmed = appointments.filter((a) => a.status === "CONFIRMED").length;
-    const scheduled = appointments.filter((a) => a.status === "SCHEDULED").length;
-    const inProgress = appointments.filter((a) => a.status === "IN_PROGRESS").length;
-    const completed = appointments.filter((a) => a.status === "COMPLETED").length;
-    const cancelled = appointments.filter((a) => a.status === "CANCELED").length;
 
-    return { total, confirmed, scheduled, inProgress, completed, cancelled };
+    const confirmed = appointments.filter(
+      (a) => a.status === "CONFIRMED",
+    ).length;
+
+    const scheduled = appointments.filter(
+      (a) => a.status === "SCHEDULED",
+    ).length;
+
+    const inProgress = appointments.filter(
+      (a) => a.status === "IN_PROGRESS",
+    ).length;
+
+    const completed = appointments.filter(
+      (a) => a.status === "COMPLETED",
+    ).length;
+
+    const cancelled = appointments.filter(
+      (a) => a.status === "CANCELED",
+    ).length;
+
+    return {
+      total,
+      confirmed,
+      scheduled,
+      inProgress,
+      completed,
+      cancelled,
+    };
   }, [appointments]);
 
   const createAppointment = async (
     input: CreateAppointmentInput,
   ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
+
     try {
       await fetcher("/agenda", {
         method: "POST",
@@ -112,12 +143,18 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
           notes: input.notes,
         }),
       });
+
       await fetchAppointments();
+
       return { success: true };
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao criar agendamento.";
-      console.error("Erro ao criar agendamento:", message);
-      return { success: false, error: message };
+      const message =
+        err instanceof Error ? err.message : "Erro ao criar agendamento.";
+
+      return {
+        success: false,
+        error: message,
+      };
     } finally {
       setIsSubmitting(false);
     }
@@ -128,13 +165,19 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
     input: UpdateAppointmentInput,
   ): Promise<{ success: boolean; error?: string }> => {
     setIsSubmitting(true);
+
     try {
       const body: Record<string, unknown> = {};
+
       if (input.patientId) body.patientId = input.patientId;
       if (input.procedureId) body.procedureId = input.procedureId;
       if (input.notes !== undefined) body.notes = input.notes;
       if (input.status) body.status = input.status;
-      if (input.durationMinutes !== undefined) body.duration = input.durationMinutes;
+
+      if (input.durationMinutes !== undefined) {
+        body.duration = input.durationMinutes;
+      }
+
       if (input.date && input.startTime) {
         body.date = toScheduledAtISO(input.date, input.startTime);
       }
@@ -143,12 +186,18 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
         method: "PATCH",
         body: JSON.stringify(body),
       });
+
       await fetchAppointments();
+
       return { success: true };
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao atualizar agendamento.";
-      console.error("Erro ao atualizar agendamento:", message);
-      return { success: false, error: message };
+      const message =
+        err instanceof Error ? err.message : "Erro ao atualizar agendamento.";
+
+      return {
+        success: false,
+        error: message,
+      };
     } finally {
       setIsSubmitting(false);
     }
@@ -159,12 +208,14 @@ export function useAppointments({ startDate, endDate }: UseAppointmentsOptions =
 
   const deleteAppointment = async (id: string): Promise<boolean> => {
     try {
-      await fetcher(`/agenda/${id}`, { method: "DELETE" });
+      await fetcher(`/agenda/${id}`, {
+        method: "DELETE",
+      });
+
       await fetchAppointments();
+
       return true;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao excluir agendamento.";
-      console.error("Erro ao excluir agendamento:", message);
+    } catch {
       return false;
     }
   };
