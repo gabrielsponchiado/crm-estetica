@@ -1,4 +1,19 @@
+import { useAuth } from "@/store/useAuth";
+
 const API_URL = "/api";
+
+const PUBLIC_AUTH_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
+
+function isPublicAuthEndpoint(endpoint: string) {
+  return PUBLIC_AUTH_ENDPOINTS.some((publicEndpoint) =>
+    endpoint.startsWith(publicEndpoint),
+  );
+}
 
 export async function fetcher<T>(
   endpoint: string,
@@ -13,6 +28,11 @@ export async function fetcher<T>(
     ...options,
     headers,
   });
+
+  if (response.status === 401 && !isPublicAuthEndpoint(endpoint)) {
+    useAuth.getState().logout();
+    throw new Error("Sessão expirada. Faça login novamente.");
+  }
 
   if (!response.ok) {
     let message = `Erro na requisição: ${response.status}`;

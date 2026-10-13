@@ -394,7 +394,7 @@ export function NewAppointmentModal({
               <Select
                 items={procedureItems}
                 value={procedureId || null}
-                onValueChange={(value: string) => {
+                onValueChange={(value) => {
                   if (!value) return;
 
                   setProcedureId(value);
