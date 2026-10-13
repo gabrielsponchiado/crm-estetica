@@ -13,8 +13,12 @@ import { fetcher } from "@/lib/api";
 
 const resetPasswordSchema = z
   .object({
-    password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
-    confirmPassword: z.string().min(1, "Confirme sua nova senha"),
+    password: z
+      .string()
+      .min(8, "A senha deve ter pelo menos 8 caracteres"),
+    confirmPassword: z
+      .string()
+      .min(1, "Confirme sua nova senha"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
@@ -145,7 +149,9 @@ function ResetPasswordContent() {
         <div className="relative z-10 w-full max-w-[365px]">
           {/* Cabeçalho */}
           <div className="mb-9">
-            <p className="mb-3 text-sm font-medium text-rose-600">Nova senha</p>
+            <p className="mb-3 text-sm font-medium text-rose-600">
+              Nova senha
+            </p>
 
             <h1 className="text-[32px] font-semibold tracking-[-0.025em] text-slate-900">
               Redefina sua senha
@@ -239,10 +245,14 @@ function ResetPasswordContent() {
 
                   <button
                     type="button"
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    onClick={() =>
+                      setShowConfirmPassword((prev) => !prev)
+                    }
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
                     aria-label={
-                      showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
+                      showConfirmPassword
+                        ? "Ocultar senha"
+                        : "Mostrar senha"
                     }
                   >
                     {showConfirmPassword ? (
