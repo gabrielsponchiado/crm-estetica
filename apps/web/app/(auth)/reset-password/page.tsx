@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -13,12 +13,8 @@ import { fetcher } from "@/lib/api";
 
 const resetPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, "A senha deve ter pelo menos 8 caracteres"),
-    confirmPassword: z
-      .string()
-      .min(1, "Confirme sua nova senha"),
+    password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
+    confirmPassword: z.string().min(1, "Confirme sua nova senha"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
@@ -31,7 +27,7 @@ interface ResetPasswordResponse {
   message: string;
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -149,9 +145,7 @@ export default function ResetPasswordPage() {
         <div className="relative z-10 w-full max-w-[365px]">
           {/* Cabeçalho */}
           <div className="mb-9">
-            <p className="mb-3 text-sm font-medium text-rose-600">
-              Nova senha
-            </p>
+            <p className="mb-3 text-sm font-medium text-rose-600">Nova senha</p>
 
             <h1 className="text-[32px] font-semibold tracking-[-0.025em] text-slate-900">
               Redefina sua senha
@@ -173,10 +167,7 @@ export default function ResetPasswordPage() {
               </p>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="space-y-5"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Nova senha */}
               <div className="space-y-2">
                 <label
@@ -248,14 +239,10 @@ export default function ResetPasswordPage() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setShowConfirmPassword((prev) => !prev)
-                    }
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
                     aria-label={
-                      showConfirmPassword
-                        ? "Ocultar senha"
-                        : "Mostrar senha"
+                      showConfirmPassword ? "Ocultar senha" : "Mostrar senha"
                     }
                   >
                     {showConfirmPassword ? (
@@ -304,5 +291,24 @@ export default function ResetPasswordPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function ResetPasswordFallback() {
+  return (
+    <div className="min-h-screen bg-[#faf9f8] flex items-center justify-center px-6">
+      <div className="flex items-center gap-2 text-sm text-slate-500">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Carregando...
+      </div>
+    </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordFallback />}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
