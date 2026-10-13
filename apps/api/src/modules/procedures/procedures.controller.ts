@@ -1,9 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { ProceduresService } from './procedures.service';
 import { CreateProcedureDto } from '../dto/create-procedure.dto';
 import { UpdateProcedureDto } from '../dto/update-procedure.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @UseGuards(JwtAuthGuard)
 @Controller('procedures')
@@ -11,6 +23,8 @@ export class ProceduresController {
   constructor(private readonly proceduresService: ProceduresService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   create(
     @Body() createProcedureDto: CreateProcedureDto,
     @CurrentUser() user: { userId: string; clinicId: string },
@@ -32,6 +46,8 @@ export class ProceduresController {
   }
 
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateProcedureDto: UpdateProcedureDto,
@@ -41,10 +57,12 @@ export class ProceduresController {
   }
 
   @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   remove(
     @Param('id') id: string,
     @CurrentUser() user: { userId: string; clinicId: string },
   ) {
     return this.proceduresService.remove(id, user.clinicId);
   }
-}
+}
