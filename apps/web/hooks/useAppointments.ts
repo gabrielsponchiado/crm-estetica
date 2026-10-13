@@ -75,13 +75,7 @@ export function useAppointments({
       );
 
       setAppointments(data.map(normalizeAppointment));
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Erro desconhecido ao carregar a agenda.";
-
-      console.error("Erro ao buscar agendamentos:", message);
+    } catch {
       setError("Não foi possível carregar a agenda.");
     } finally {
       setLoading(false);
@@ -95,27 +89,30 @@ export function useAppointments({
   const getAppointmentsForDay = useCallback(
     (date: Date) =>
       appointments
-        .filter((appointment) =>
-          isSameDay(parseISO(appointment.date), date),
-        )
+        .filter((appointment) => isSameDay(parseISO(appointment.date), date))
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [appointments],
   );
 
   const stats = useMemo(() => {
     const total = appointments.length;
+
     const confirmed = appointments.filter(
       (a) => a.status === "CONFIRMED",
     ).length;
+
     const scheduled = appointments.filter(
       (a) => a.status === "SCHEDULED",
     ).length;
+
     const inProgress = appointments.filter(
       (a) => a.status === "IN_PROGRESS",
     ).length;
+
     const completed = appointments.filter(
       (a) => a.status === "COMPLETED",
     ).length;
+
     const cancelled = appointments.filter(
       (a) => a.status === "CANCELED",
     ).length;
@@ -152,11 +149,12 @@ export function useAppointments({
       return { success: true };
     } catch (err: unknown) {
       const message =
-        err instanceof Error
-          ? err.message
-          : "Erro ao criar agendamento.";
+        err instanceof Error ? err.message : "Erro ao criar agendamento.";
 
-      return { success: false, error: message };
+      return {
+        success: false,
+        error: message,
+      };
     } finally {
       setIsSubmitting(false);
     }
@@ -175,6 +173,7 @@ export function useAppointments({
       if (input.procedureId) body.procedureId = input.procedureId;
       if (input.notes !== undefined) body.notes = input.notes;
       if (input.status) body.status = input.status;
+
       if (input.durationMinutes !== undefined) {
         body.duration = input.durationMinutes;
       }
@@ -193,36 +192,30 @@ export function useAppointments({
       return { success: true };
     } catch (err: unknown) {
       const message =
-        err instanceof Error
-          ? err.message
-          : "Erro ao atualizar agendamento.";
+        err instanceof Error ? err.message : "Erro ao atualizar agendamento.";
 
-      return { success: false, error: message };
+      return {
+        success: false,
+        error: message,
+      };
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateAppointmentStatus = (
-    id: string,
-    status: AppointmentStatus,
-  ) => updateAppointment(id, { status });
+  const updateAppointmentStatus = (id: string, status: AppointmentStatus) =>
+    updateAppointment(id, { status });
 
   const deleteAppointment = async (id: string): Promise<boolean> => {
     try {
-      await fetcher(`/agenda/${id}`, { method: "DELETE" });
+      await fetcher(`/agenda/${id}`, {
+        method: "DELETE",
+      });
 
       await fetchAppointments();
 
       return true;
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Erro ao excluir agendamento.";
-
-      console.error("Erro ao excluir agendamento:", message);
-
+    } catch {
       return false;
     }
   };
