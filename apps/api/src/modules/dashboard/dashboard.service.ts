@@ -26,31 +26,54 @@ export class DashboardService {
 
     const grouped = await this.prisma.appointment.groupBy({
       by: ['status'],
-      where: { clinicId, scheduledAt: { gte: startOfDay, lte: endOfDay } },
+      where: {
+        clinicId,
+        scheduledAt: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
       _count: true,
     });
 
-    const result = { total: 0, confirmados: 0, agendados: 0 };
+    const result = {
+      total: 0,
+      confirmados: 0,
+      agendados: 0,
+    };
 
     for (const item of grouped) {
       result.total += item._count;
+
       if (item.status === 'CONFIRMED') {
         result.confirmados += item._count;
       } else if (item.status === 'SCHEDULED') {
         result.agendados += item._count;
       }
     }
+
     return result;
   }
 
- async getPatientsStats(clinicId: string) {
+  async getPatientsStats(clinicId: string) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [total, newThisMonth] = await Promise.all([
-      this.prisma.patient.count({ where: { clinicId, deletedAt: null } }),
       this.prisma.patient.count({
-        where: { clinicId, deletedAt: null, createdAt: { gte: startOfMonth } },
+        where: {
+          clinicId,
+          deletedAt: null,
+        },
+      }),
+      this.prisma.patient.count({
+        where: {
+          clinicId,
+          deletedAt: null,
+          createdAt: {
+            gte: startOfMonth,
+          },
+        },
       }),
     ]);
 
@@ -59,35 +82,67 @@ export class DashboardService {
 
   async getBirthdaysThisMonth(clinicId: string) {
     const patientsWithBirthDate = await this.prisma.patient.findMany({
-      where: { clinicId, deletedAt: null, birthDate: { not: null }},
-      select: { id: true, name: true, birthDate: true },
-    })
+      where: {
+        clinicId,
+        deletedAt: null,
+        birthDate: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        birthDate: true,
+      },
+    });
 
     const currentMonth = new Date().getMonth();
+
     const filtered = patientsWithBirthDate.filter((patient) => {
       return patient.birthDate && patient.birthDate.getMonth() === currentMonth;
-    })
+    });
+
     return filtered;
   }
 
   async getInactivePatients(clinicId: string) {
     const inactivePatients = await this.prisma.patient.findMany({
-      where: { clinicId, deletedAt: null },
-      select: { id: true, name: true, appointments: {
-        where: { status: "COMPLETED" },
-        orderBy: { scheduledAt: "desc" },
-        take: 1,
-        select: { scheduledAt: true },
-      }},
+      where: {
+        clinicId,
+        deletedAt: null,
+        appointments: {
+          some: {
+            status: 'COMPLETED',
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        appointments: {
+          where: {
+            status: 'COMPLETED',
+          },
+          orderBy: {
+            scheduledAt: 'desc',
+          },
+          take: 1,
+          select: {
+            scheduledAt: true,
+          },
+        },
+      },
     });
+
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     const filtered = inactivePatients.filter((patient) => {
       const lastAppointment = patient.appointments[0];
-      return !lastAppointment || lastAppointment.scheduledAt < ninetyDaysAgo;
-    })
-    
+
+      return lastAppointment && lastAppointment.scheduledAt < ninetyDaysAgo;
+    });
+
     return filtered;
   }
 }
