@@ -41,6 +41,7 @@ export class AuthService {
 
     const payload = {
       sub: user.id,
+      tokenVersion: user.tokenVersion,
     };
 
     return {
@@ -151,6 +152,9 @@ export class AuthService {
         },
         data: {
           password: hashedPassword,
+          tokenVersion: {
+            increment: 1,
+          },
         },
       });
 
