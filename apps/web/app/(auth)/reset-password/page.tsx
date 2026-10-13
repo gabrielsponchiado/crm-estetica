@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -31,7 +31,7 @@ interface ResetPasswordResponse {
   message: string;
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -173,10 +173,7 @@ export default function ResetPasswordPage() {
               </p>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="space-y-5"
-            >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Nova senha */}
               <div className="space-y-2">
                 <label
@@ -304,5 +301,24 @@ export default function ResetPasswordPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function ResetPasswordFallback() {
+  return (
+    <div className="min-h-screen bg-[#faf9f8] flex items-center justify-center px-6">
+      <div className="flex items-center gap-2 text-sm text-slate-500">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Carregando...
+      </div>
+    </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordFallback />}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
