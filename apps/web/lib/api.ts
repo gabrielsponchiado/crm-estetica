@@ -30,7 +30,14 @@ export async function fetcher<T>(
   });
 
   if (response.status === 401 && !isPublicAuthEndpoint(endpoint)) {
-    useAuth.getState().logout();
+    try {
+      await fetch("/api/auth/clear-session", {
+        method: "POST",
+      });
+    } catch {}
+
+    useAuth.getState().clearLocalSession();
+
     throw new Error("Sessão expirada. Faça login novamente.");
   }
 
