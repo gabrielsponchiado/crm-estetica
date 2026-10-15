@@ -16,15 +16,15 @@ import {
 import { fetcher } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
-import { PatientHeader } from '../components/PatientHeader';
-import { PatientOverview } from '../components/PatientOverview';
-import { PatientAnamnesis } from '../components/PatientAnamnesis';
-import { PatientProcedures } from '../components/PatientProcedures';
-import { PatientPhotos } from '../components/PatientPhotos';
-import { PatientQuotes } from '../components/PatientQuotes';
-import { PatientAppointments } from '../components/PatientAppointments';
-import { EditPatientDialog } from '../components/EditPatientDialog';
-import { NewAppointmentDialog } from '../components/NewAppointmentDialog';
+import { PatientHeader } from './components/PatientHeader';
+import { PatientOverview } from './components/PatientOverview';
+import { PatientAnamnesis } from './components/PatientAnamnesis';
+import { PatientProcedures } from './components/PatientProcedures';
+import { PatientPhotos } from './components/PatientPhotos';
+import { PatientQuotes } from './components/PatientQuotes';
+import { PatientAppointments } from './components/PatientAppointments';
+import { EditPatientDialog } from './components/EditPatientDialog';
+import { NewAppointmentDialog } from './components/NewAppointmentDialog';
 
 interface PatientDetailsPageProps {
   params: Promise<{ id: string }>;
