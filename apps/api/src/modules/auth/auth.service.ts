@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -29,8 +33,10 @@ export class AuthService {
     email: string,
     pass: string,
   ): Promise<Omit<User, 'password'> | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (user && (await bcrypt.compare(pass, user.password))) {
@@ -75,6 +81,16 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
+    const email = registerDto.email.trim().toLowerCase();
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Este e-mail já está cadastrado.');
+    }
+
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     return this.prisma.$transaction(async (tx) => {
@@ -87,7 +103,7 @@ export class AuthService {
 
       const user = await tx.user.create({
         data: {
-          email: registerDto.email,
+          email,
           password: hashedPassword,
           name: registerDto.name,
           clinicId: clinic.id,
@@ -101,8 +117,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     const message =
