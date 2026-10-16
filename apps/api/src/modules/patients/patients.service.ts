@@ -7,6 +7,8 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
+import { CreatePatientProcedureDto } from '../dto/create-patient-procedure.dto';
+import { UpdatePatientProcedureDto } from '../dto/update-patient-procedure.dto';
 
 export type PatientSearchField = 'all' | 'name' | 'email' | 'cpf';
 
@@ -215,6 +217,140 @@ export class PatientsService {
       },
       data: {
         deletedAt: new Date(),
+      },
+    });
+  }
+
+  async createProcedureRecord(
+    patientId: string,
+    dto: CreatePatientProcedureDto,
+    clinicId: string,
+  ) {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        clinicId,
+        deletedAt: null,
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException(
+        `Paciente com ID ${patientId} não foi encontrado.`,
+      );
+    }
+
+    const procedure = await this.prisma.procedure.findFirst({
+      where: {
+        id: dto.procedureId,
+        clinicId,
+        deletedAt: null,
+      },
+    });
+
+    if (!procedure) {
+      throw new NotFoundException(
+        `Procedimento com ID ${dto.procedureId} não foi encontrado.`,
+      );
+    }
+
+    return this.prisma.patientProcedure.create({
+      data: {
+        patientId,
+        procedureId: dto.procedureId,
+        performedAt: new Date(dto.performedAt),
+        nextReturnAt: dto.nextReturnAt
+          ? new Date(dto.nextReturnAt)
+          : null,
+      },
+      include: {
+        procedure: true,
+      },
+    });
+  }
+
+  async updateProcedureRecord(
+    patientId: string,
+    patientProcedureId: string,
+    dto: UpdatePatientProcedureDto,
+    clinicId: string,
+  ) {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        clinicId,
+        deletedAt: null,
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException(
+        `Paciente com ID ${patientId} não foi encontrado.`,
+      );
+    }
+
+    const patientProcedure =
+      await this.prisma.patientProcedure.findFirst({
+        where: {
+          id: patientProcedureId,
+          patientId,
+        },
+        include: {
+          procedure: true,
+        },
+      });
+
+    if (!patientProcedure) {
+      throw new NotFoundException(
+        'Procedimento realizado não foi encontrado.',
+      );
+    }
+
+    if (
+      patientProcedure.procedure.clinicId !== clinicId ||
+      patientProcedure.procedure.deletedAt !== null
+    ) {
+      throw new NotFoundException(
+        'Procedimento não encontrado.',
+      );
+    }
+
+    let procedureId = patientProcedure.procedureId;
+
+    if (dto.procedureId !== undefined) {
+      const procedure = await this.prisma.procedure.findFirst({
+        where: {
+          id: dto.procedureId,
+          clinicId,
+          deletedAt: null,
+        },
+      });
+
+      if (!procedure) {
+        throw new NotFoundException(
+          `Procedimento com ID ${dto.procedureId} não foi encontrado.`,
+        );
+      }
+
+      procedureId = dto.procedureId;
+    }
+
+    return this.prisma.patientProcedure.update({
+      where: {
+        id: patientProcedureId,
+      },
+      data: {
+        procedureId,
+        performedAt: dto.performedAt
+          ? new Date(dto.performedAt)
+          : undefined,
+        nextReturnAt:
+          dto.nextReturnAt !== undefined
+            ? new Date(dto.nextReturnAt)
+            : undefined,
+      },
+      include: {
+        procedure: true,
       },
     });
   }
