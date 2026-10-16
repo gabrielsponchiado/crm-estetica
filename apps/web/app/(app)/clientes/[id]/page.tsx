@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { use, useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { use, useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Clock,
@@ -11,44 +11,73 @@ import {
   LayoutDashboard,
   Loader2,
   Sparkles,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { fetcher } from '@/lib/api';
-import { Button } from '@/components/ui/button';
+import { fetcher } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
-import { PatientHeader } from './components/PatientHeader';
-import { PatientOverview } from './components/PatientOverview';
-import { PatientAnamnesis } from './components/PatientAnamnesis';
-import { PatientProcedures } from './components/PatientProcedures';
-import { PatientPhotos } from './components/PatientPhotos';
-import { PatientQuotes } from './components/PatientQuotes';
-import { PatientAppointments } from './components/PatientAppointments';
-import { EditPatientDialog } from './components/EditPatientDialog';
-import { NewAppointmentDialog } from './components/NewAppointmentDialog';
+import { PatientHeader } from "./components/PatientHeader";
+import { PatientOverview } from "./components/PatientOverview";
+import { PatientAnamnesis } from "./components/PatientAnamnesis";
+import { PatientProcedures } from "./components/PatientProcedures";
+import { PatientPhotos } from "./components/PatientPhotos";
+import { PatientQuotes } from "./components/PatientQuotes";
+import { PatientAppointments } from "./components/PatientAppointments";
+import { EditPatientDialog } from "./components/EditPatientDialog";
+import { NewAppointmentDialog } from "./components/NewAppointmentDialog";
 
 interface PatientDetailsPageProps {
   params: Promise<{ id: string }>;
 }
 
 type TabId =
-  | 'overview'
-  | 'anamnesis'
-  | 'procedures'
-  | 'photos'
-  | 'quotes'
-  | 'appointments';
+  | "overview"
+  | "anamnesis"
+  | "procedures"
+  | "photos"
+  | "quotes"
+  | "appointments";
+
+type ProcedureCatalogItem = {
+  id: string;
+  name: string;
+};
 
 const TABS: {
   id: TabId;
   label: string;
   icon: typeof LayoutDashboard;
 }[] = [
-  { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
-  { id: 'anamnesis', label: 'Anamnese', icon: FileText },
-  { id: 'procedures', label: 'Procedimentos', icon: Sparkles },
-  { id: 'photos', label: 'Fotos', icon: Image },
-  { id: 'quotes', label: 'Orçamentos', icon: DollarSign },
-  { id: 'appointments', label: 'Agendamentos', icon: Clock },
+  {
+    id: "overview",
+    label: "Visão Geral",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "anamnesis",
+    label: "Anamnese",
+    icon: FileText,
+  },
+  {
+    id: "procedures",
+    label: "Procedimentos",
+    icon: Sparkles,
+  },
+  {
+    id: "photos",
+    label: "Fotos",
+    icon: Image,
+  },
+  {
+    id: "quotes",
+    label: "Orçamentos",
+    icon: DollarSign,
+  },
+  {
+    id: "appointments",
+    label: "Agendamentos",
+    icon: Clock,
+  },
 ];
 
 export default function PatientDetailsPage({
@@ -57,12 +86,18 @@ export default function PatientDetailsPage({
   const { id } = use(params);
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+
   const [patient, setPatient] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
-  const [procedureCatalog, setProcedureCatalog] = useState<any[]>([]);
+
+  const [procedureCatalog, setProcedureCatalog] = useState<
+    ProcedureCatalogItem[]
+  >([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
 
   const applyPatientData = useCallback((data: any) => {
@@ -70,7 +105,8 @@ export default function PatientDetailsPage({
   }, []);
 
   const refreshPatient = useCallback(async () => {
-    const data = await fetcher(`/patients/${id}`);
+    const data = await fetcher<any>(`/patients/${id}`);
+
     applyPatientData(data);
   }, [id, applyPatientData]);
 
@@ -81,13 +117,13 @@ export default function PatientDetailsPage({
 
         const [patientData, procedures] = await Promise.all([
           fetcher<any>(`/patients/${id}`),
-          fetcher<any[]>('/procedures').catch(() => []),
+
+          fetcher<ProcedureCatalogItem[]>("/procedures").catch(() => []),
         ]);
 
         applyPatientData(patientData);
-        setProcedureCatalog(
-          Array.isArray(procedures) ? procedures : [],
-        );
+
+        setProcedureCatalog(Array.isArray(procedures) ? procedures : []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -115,14 +151,9 @@ export default function PatientDetailsPage({
   if (!patient) {
     return (
       <div className="p-6 text-center space-y-4">
-        <p className="text-muted-foreground">
-          Paciente não encontrado.
-        </p>
+        <p className="text-muted-foreground">Paciente não encontrado.</p>
 
-        <Button
-          variant="outline"
-          onClick={() => router.back()}
-        >
+        <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar para Clientes
         </Button>
@@ -147,8 +178,8 @@ export default function PatientDetailsPage({
               onClick={() => setActiveTab(tabId)}
               className={`flex items-center gap-2 py-3 px-3 border-b-2 text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === tabId
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -159,17 +190,15 @@ export default function PatientDetailsPage({
       </div>
 
       <div className="bg-card rounded-xl border border-border min-h-[400px]">
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <PatientOverview
             patient={patient}
             onTabChange={setActiveTab}
-            onNewAppointment={() =>
-              setIsNewAppointmentOpen(true)
-            }
+            onNewAppointment={() => setIsNewAppointmentOpen(true)}
           />
         )}
 
-        {activeTab === 'anamnesis' && (
+        {activeTab === "anamnesis" && (
           <PatientAnamnesis
             patient={patient}
             patientId={id}
@@ -177,29 +206,23 @@ export default function PatientDetailsPage({
           />
         )}
 
-        {activeTab === 'procedures' && (
+        {activeTab === "procedures" && (
           <PatientProcedures
             patient={patient}
-            onNewAppointment={() =>
-              setIsNewAppointmentOpen(true)
-            }
+            procedureCatalog={procedureCatalog}
+            onNewAppointment={() => setIsNewAppointmentOpen(true)}
+            onRefresh={refreshPatient}
           />
         )}
 
-        {activeTab === 'photos' && (
-          <PatientPhotos patient={patient} />
-        )}
+        {activeTab === "photos" && <PatientPhotos patient={patient} />}
 
-        {activeTab === 'quotes' && (
-          <PatientQuotes patient={patient} />
-        )}
+        {activeTab === "quotes" && <PatientQuotes patient={patient} />}
 
-        {activeTab === 'appointments' && (
+        {activeTab === "appointments" && (
           <PatientAppointments
             patient={patient}
-            onNewAppointment={() =>
-              setIsNewAppointmentOpen(true)
-            }
+            onNewAppointment={() => setIsNewAppointmentOpen(true)}
           />
         )}
       </div>
@@ -220,7 +243,7 @@ export default function PatientDetailsPage({
         onOpenChange={setIsNewAppointmentOpen}
         onCreated={async () => {
           await refreshPatient();
-          setActiveTab('appointments');
+          setActiveTab("appointments");
         }}
       />
     </div>

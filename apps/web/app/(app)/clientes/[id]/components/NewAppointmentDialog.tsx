@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-
+import { useState, type FormEvent } from 'react';
 import {
   AlertCircle,
-  Loader2,
+  Calendar as CalendarIcon,
   Plus,
 } from 'lucide-react';
+import { ptBR } from 'date-fns/locale';
+
+import { fetcher } from '@/lib/api';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,23 +24,84 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-import { fetcher } from '@/lib/api';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { Calendar } from '@/components/ui/calendar';
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+type Procedure = {
+  id: string;
+  name: string;
+  price?: number | string;
+};
 
 type NewAppointmentDialogProps = {
   patientId: string;
   patientName: string;
-  procedureCatalog: any[];
+  procedureCatalog: Procedure[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => Promise<void>;
 };
 
-const EMPTY_FORM = {
-  procedureId: '',
-  date: '',
-  duration: '60',
-  notes: '',
+type AppointmentForm = {
+  procedureId: string;
+  date: string;
+  time: string;
+  duration: string;
+  notes: string;
 };
+
+function parseDateInput(value?: string | null) {
+  if (!value) {
+    return undefined;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return undefined;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function formatDateInput(date?: Date) {
+  if (!date) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateDisplay(value?: string) {
+  if (!value) {
+    return 'Selecione uma data';
+  }
+
+  const date = parseDateInput(value);
+
+  if (!date) {
+    return 'Selecione uma data';
+  }
+
+  return date.toLocaleDateString('pt-BR');
+}
 
 export function NewAppointmentDialog({
   patientId,
@@ -48,79 +111,126 @@ export function NewAppointmentDialog({
   onOpenChange,
   onCreated,
 }: NewAppointmentDialogProps) {
-  const [form, setForm] = useState(
-    EMPTY_FORM,
-  );
+  const [aptForm, setAptForm] =
+    useState<AppointmentForm>({
+      procedureId: '',
+      date: '',
+      time: '',
+      duration: '60',
+      notes: '',
+    });
 
-  const [isCreating, setIsCreating] =
+  const [isCreatingApt, setIsCreatingApt] =
     useState(false);
 
-  const [error, setError] = useState('');
+  const [aptError, setAptError] =
+    useState('');
 
-  const handleOpenChange = (
-    nextOpen: boolean,
-  ) => {
+  /*
+   * Mesmo padrão usado pelo modal de agenda
+   * que já funciona no projeto.
+   *
+   * value = ID enviado para a API
+   * label = nome exibido no Select
+   */
+  const procedureItems = procedureCatalog.map(
+    (procedure) => ({
+      value: procedure.id,
+      label: procedure.name,
+    }),
+  );
+
+  function resetForm() {
+    setAptForm({
+      procedureId: '',
+      date: '',
+      time: '',
+      duration: '60',
+      notes: '',
+    });
+
+    setAptError('');
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (isCreatingApt) {
+      return;
+    }
+
     onOpenChange(nextOpen);
 
     if (!nextOpen) {
-      setError('');
-      setForm(EMPTY_FORM);
+      resetForm();
     }
-  };
+  }
 
-  const handleSubmit = async (
-    event: React.FormEvent,
-  ) => {
+  async function handleCreateAppointment(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
 
-    setError('');
+    setAptError('');
 
-    if (!form.procedureId) {
-      setError(
-        'Selecione um procedimento.',
+    if (!aptForm.procedureId) {
+      setAptError('Selecione um procedimento.');
+      return;
+    }
+
+    if (!aptForm.date) {
+      setAptError('Informe a data.');
+      return;
+    }
+
+    if (!aptForm.time) {
+      setAptError('Informe o horário.');
+      return;
+    }
+
+    const duration = Number(aptForm.duration);
+
+    if (
+      !Number.isInteger(duration) ||
+      duration < 1 ||
+      duration > 1440
+    ) {
+      setAptError(
+        'A duração deve estar entre 1 e 1440 minutos.',
       );
       return;
     }
 
-    if (!form.date) {
-      setError(
-        'Informe a data e hora.',
-      );
-      return;
-    }
-
-    setIsCreating(true);
+    setIsCreatingApt(true);
 
     try {
+      const localDateTime = `${aptForm.date}T${aptForm.time}`;
+
       await fetcher('/agenda', {
         method: 'POST',
         body: JSON.stringify({
           patientId,
-          procedureId: form.procedureId,
+          procedureId: aptForm.procedureId,
           date: new Date(
-            form.date,
+            localDateTime,
           ).toISOString(),
-          duration:
-            Number(form.duration) || 60,
-          notes:
-            form.notes || undefined,
+          duration,
+          notes: aptForm.notes.trim() || undefined,
         }),
       });
 
+      resetForm();
+      onOpenChange(false);
+
       await onCreated();
-
-      setForm(EMPTY_FORM);
-
-      handleOpenChange(false);
-    } catch (err: any) {
-      setError(
-        err?.message ||
-          'Erro ao criar agendamento.',
+    } catch (err: unknown) {
+      setAptError(
+        err instanceof Error
+          ? err.message
+          : 'Erro ao criar agendamento.',
       );
     } finally {
-      setIsCreating(false);
+      setIsCreatingApt(false);
     }
-  };
+  }
 
   return (
     <Dialog
@@ -140,102 +250,166 @@ export function NewAppointmentDialog({
         </DialogHeader>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleCreateAppointment}
           className="space-y-5 py-4"
         >
+          {/* PROCEDIMENTO */}
+
           <div className="space-y-2">
-            <Label htmlFor="apt-procedure">
-              Procedimento *
-            </Label>
+            <Label>Procedimento *</Label>
 
-            <select
-              id="apt-procedure"
-              value={form.procedureId}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  procedureId:
-                    e.target.value,
-                }))
-              }
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              required
+            <Select
+              items={procedureItems}
+              value={aptForm.procedureId || null}
+              onValueChange={(value) => {
+                if (!value) {
+                  return;
+                }
+
+                setAptForm((previous) => ({
+                  ...previous,
+                  procedureId: value,
+                }));
+
+                setAptError('');
+              }}
             >
-              <option value="">
-                Selecione um procedimento...
-              </option>
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder="Selecione um procedimento..." />
+              </SelectTrigger>
 
-              {procedureCatalog.map(
-                (procedure: any) => (
-                  <option
-                    key={procedure.id}
-                    value={procedure.id}
+              <SelectContent
+                side="bottom"
+                align="start"
+                sideOffset={6}
+                alignItemWithTrigger={false}
+                className="w-(--anchor-width)"
+              >
+                {procedureItems.map((item) => (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}
                   >
-                    {procedure.name} — R${' '}
-                    {Number(
-                      procedure.price,
-                    ).toLocaleString(
-                      'pt-BR',
-                      {
-                        minimumFractionDigits: 2,
-                      },
-                    )}
-                  </option>
-                ),
-              )}
-            </select>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {procedureCatalog.length ===
-              0 && (
+            {procedureCatalog.length === 0 && (
               <p className="text-xs text-muted-foreground">
                 Nenhum procedimento cadastrado.
-                Acesse Procedimentos para
-                cadastrar.
               </p>
             )}
           </div>
 
+          {/* DATA + HORÁRIO */}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="apt-date">
-                Data e Hora *
+              <Label>Data *</Label>
+
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 w-full justify-between font-normal"
+                    />
+                  }
+                >
+                  <span
+                    className={
+                      aptForm.date
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    }
+                  >
+                    {aptForm.date
+                      ? formatDateDisplay(
+                          aptForm.date,
+                        )
+                      : 'Selecione uma data'}
+                  </span>
+
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                </PopoverTrigger>
+
+                <PopoverContent
+                  className="w-auto p-0"
+                  align="start"
+                  sideOffset={6}
+                >
+                  <Calendar
+                    mode="single"
+                    selected={parseDateInput(
+                      aptForm.date,
+                    )}
+                    onSelect={(date) => {
+                      setAptForm((previous) => ({
+                        ...previous,
+                        date: formatDateInput(date),
+                      }));
+
+                      setAptError('');
+                    }}
+                    locale={ptBR}
+                    captionLayout="dropdown"
+                    startMonth={new Date(1950, 0)}
+                    endMonth={new Date(2100, 11)}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="apt-time">
+                Horário *
               </Label>
 
               <Input
-                id="apt-date"
-                type="datetime-local"
-                value={form.date}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    date: e.target.value,
-                  }))
-                }
+                id="apt-time"
+                type="time"
+                value={aptForm.time}
+                onChange={(event) => {
+                  setAptForm((previous) => ({
+                    ...previous,
+                    time: event.target.value,
+                  }));
+
+                  setAptError('');
+                }}
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="apt-duration">
-                Duração (min)
-              </Label>
-
-              <Input
-                id="apt-duration"
-                type="number"
-                min={15}
-                max={480}
-                value={form.duration}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    duration:
-                      e.target.value,
-                  }))
-                }
-              />
-            </div>
           </div>
+
+          {/* DURAÇÃO */}
+
+          <div className="space-y-2">
+            <Label htmlFor="apt-duration">
+              Duração (min)
+            </Label>
+
+            <Input
+              id="apt-duration"
+              type="number"
+              min={1}
+              max={1440}
+              value={aptForm.duration}
+              onChange={(event) => {
+                setAptForm((previous) => ({
+                  ...previous,
+                  duration: event.target.value,
+                }));
+
+                setAptError('');
+              }}
+            />
+          </div>
+
+          {/* OBSERVAÇÕES */}
 
           <div className="space-y-2">
             <Label htmlFor="apt-notes">
@@ -245,47 +419,50 @@ export function NewAppointmentDialog({
             <Textarea
               id="apt-notes"
               placeholder="Motivo da consulta, preparações necessárias..."
-              value={form.notes}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  notes: e.target.value,
-                }))
-              }
-              className="resize-none min-h-[80px] text-sm"
+              value={aptForm.notes}
+              onChange={(event) => {
+                setAptForm((previous) => ({
+                  ...previous,
+                  notes: event.target.value,
+                }));
+              }}
+              className="min-h-[80px] resize-none text-sm"
             />
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
+          {aptError && (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+
+              {aptError}
             </div>
           )}
 
-          <DialogFooter className="pt-4 border-t border-border">
+          <DialogFooter className="border-t border-border pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() =>
                 handleOpenChange(false)
               }
+              disabled={isCreatingApt}
             >
               Cancelar
             </Button>
 
             <Button
               type="submit"
-              disabled={isCreating}
+              disabled={isCreatingApt}
               className="gap-2"
             >
-              {isCreating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {isCreatingApt ? (
+                'Agendando...'
               ) : (
-                <Plus className="w-4 h-4" />
+                <>
+                  <Plus className="h-4 w-4" />
+                  Agendar
+                </>
               )}
-
-              Agendar
             </Button>
           </DialogFooter>
         </form>
