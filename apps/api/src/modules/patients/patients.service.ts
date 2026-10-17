@@ -9,6 +9,8 @@ import { CreatePatientsDto } from '../dto/create-patient.dto';
 import { UpdatePatientsDto } from '../dto/update-patient.dto';
 import { CreatePatientProcedureDto } from '../dto/create-patient-procedure.dto';
 import { UpdatePatientProcedureDto } from '../dto/update-patient-procedure.dto';
+import { CreateQuoteDto } from '../dto/create-quote.dto';
+import { UpdateQuoteDto } from '../dto/update-quote.dto';
 
 export type PatientSearchField = 'all' | 'name' | 'email' | 'cpf';
 
@@ -351,6 +353,79 @@ export class PatientsService {
       },
       include: {
         procedure: true,
+      },
+    });
+  }
+
+  async createQuote(
+    patientId: string,
+    dto: CreateQuoteDto,
+    clinicId: string,
+  ) {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        clinicId,
+        deletedAt: null,
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException(
+        `Paciente com ID ${patientId} não foi encontrado.`,
+      );
+    }
+
+    return this.prisma.quote.create({
+      data: {
+        patientId,
+        totalValue: dto.totalValue,
+        details: dto.details,
+      },
+    });
+  }
+
+  async updateQuote(
+    patientId: string,
+    quoteId: string,
+    dto: UpdateQuoteDto,
+    clinicId: string,
+  ) {
+    const patient = await this.prisma.patient.findFirst({
+      where: {
+        id: patientId,
+        clinicId,
+        deletedAt: null,
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException(
+        `Paciente com ID ${patientId} não foi encontrado.`,
+      );
+    }
+
+    const quote = await this.prisma.quote.findFirst({
+      where: {
+        id: quoteId,
+        patientId,
+      },
+    });
+
+    if (!quote) {
+      throw new NotFoundException(
+        'Orçamento não foi encontrado.',
+      );
+    }
+
+    return this.prisma.quote.update({
+      where: {
+        id: quoteId,
+      },
+      data: {
+        totalValue: dto.totalValue,
+        details: dto.details,
+        status: dto.status,
       },
     });
   }
