@@ -16,6 +16,8 @@ import { UpdatePatientsDto } from '../dto/update-patient.dto';
 import { QueryPatientsDto } from '../dto/query-patients.dto';
 import { CreatePatientProcedureDto } from '../dto/create-patient-procedure.dto';
 import { UpdatePatientProcedureDto } from '../dto/update-patient-procedure.dto';
+import { CreateQuoteDto } from '../dto/create-quote.dto';
+import { UpdateQuoteDto } from '../dto/update-quote.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
@@ -104,6 +106,48 @@ export class PatientsController {
     );
   }
 
+  @Post(':id/quotes')
+  createQuote(
+    @Param('id') id: string,
+    @Body() dto: CreateQuoteDto,
+    @CurrentUser()
+    user: {
+      userId: string;
+      clinicId: string;
+      role?: string;
+    },
+  ) {
+    this.ensureQuoteMutationPermission(user.role);
+
+    return this.patientsService.createQuote(
+      id,
+      dto,
+      user.clinicId,
+    );
+  }
+
+  @Patch(':id/quotes/:quoteId')
+  updateQuote(
+    @Param('id') id: string,
+    @Param('quoteId') quoteId: string,
+    @Body() dto: UpdateQuoteDto,
+    @CurrentUser()
+    user: {
+      userId: string;
+      clinicId: string;
+      role?: string;
+    },
+  ) {
+    this.ensureQuoteMutationPermission(user.role);
+
+    return this.patientsService.updateQuote(
+      id,
+      quoteId,
+      dto,
+      user.clinicId,
+    );
+  }
+
   @Get(':id')
   findOne(
     @Param('id') id: string,
@@ -133,6 +177,14 @@ export class PatientsController {
     if (role !== 'ADMIN' && role !== 'CLINICIAN') {
       throw new ForbiddenException(
         'Seu perfil não tem permissão para alterar procedimentos realizados.',
+      );
+    }
+  }
+
+  private ensureQuoteMutationPermission(role?: string) {
+    if (role !== 'ADMIN' && role !== 'CLINICIAN') {
+      throw new ForbiddenException(
+        'Seu perfil não tem permissão para alterar orçamentos.',
       );
     }
   }
