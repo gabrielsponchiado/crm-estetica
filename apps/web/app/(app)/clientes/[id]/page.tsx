@@ -7,10 +7,11 @@ import {
   Clock,
   DollarSign,
   FileText,
-  Image,
+  Image as ImageIcon,
   LayoutDashboard,
   Loader2,
   Sparkles,
+  UserX,
 } from "lucide-react";
 
 import { fetcher } from "@/lib/api";
@@ -66,7 +67,7 @@ const TABS: {
   {
     id: "photos",
     label: "Fotos",
-    icon: Image,
+    icon: ImageIcon,
   },
   {
     id: "quotes",
@@ -87,17 +88,13 @@ export default function PatientDetailsPage({
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-
   const [patient, setPatient] = useState<any>(null);
-
   const [loading, setLoading] = useState(true);
-
   const [procedureCatalog, setProcedureCatalog] = useState<
     ProcedureCatalogItem[]
   >([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
 
   const applyPatientData = useCallback((data: any) => {
@@ -106,7 +103,6 @@ export default function PatientDetailsPage({
 
   const refreshPatient = useCallback(async () => {
     const data = await fetcher<any>(`/patients/${id}`);
-
     applyPatientData(data);
   }, [id, applyPatientData]);
 
@@ -117,12 +113,10 @@ export default function PatientDetailsPage({
 
         const [patientData, procedures] = await Promise.all([
           fetcher<any>(`/patients/${id}`),
-
           fetcher<ProcedureCatalogItem[]>("/procedures").catch(() => []),
         ]);
 
         applyPatientData(patientData);
-
         setProcedureCatalog(Array.isArray(procedures) ? procedures : []);
       } catch (error) {
         console.error(error);
@@ -140,8 +134,7 @@ export default function PatientDetailsPage({
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm font-medium text-muted-foreground">
           Carregando prontuário...
         </p>
       </div>
@@ -150,10 +143,14 @@ export default function PatientDetailsPage({
 
   if (!patient) {
     return (
-      <div className="p-6 text-center space-y-4">
-        <p className="text-muted-foreground">Paciente não encontrado.</p>
-
-        <Button variant="outline" onClick={() => router.back()}>
+      <div className="p-12 text-center space-y-4 bg-card rounded-2xl border border-border/60 max-w-md mx-auto mt-10">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+          <UserX className="w-6 h-6" />
+        </div>
+        <p className="text-base font-semibold text-foreground">
+          Paciente não encontrado.
+        </p>
+        <Button variant="outline" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar para Clientes
         </Button>
@@ -170,26 +167,35 @@ export default function PatientDetailsPage({
         onNewAppointment={() => setIsNewAppointmentOpen(true)}
       />
 
-      <div className="border-b border-border overflow-x-auto custom-scrollbar">
-        <nav className="-mb-px flex space-x-1 min-w-max">
-          {TABS.map(({ id: tabId, label, icon: Icon }) => (
-            <button
-              key={tabId}
-              onClick={() => setActiveTab(tabId)}
-              className={`flex items-center gap-2 py-3 px-3 border-b-2 text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === tabId
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
+      {/* TABS RESTRUTURADAS E ESTILIZADAS */}
+      <div className="w-full overflow-x-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1">
+        <nav className="inline-flex items-center gap-1.5 p-1.5 bg-muted/60 backdrop-blur-sm rounded-xl border border-border/50 min-w-full sm:min-w-0">
+          {TABS.map(({ id: tabId, label, icon: Icon }) => {
+            const isActive = activeTab === tabId;
+            return (
+              <button
+                key={tabId}
+                onClick={() => setActiveTab(tabId)}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap select-none ${
+                  isActive
+                    ? "bg-background text-foreground shadow-xs ring-1 ring-border/80"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50 ring-1 ring-transparent"
+                }`}
+              >
+                <Icon
+                  className={`w-3.5 h-3.5 transition-colors ${
+                    isActive ? "text-primary" : "text-muted-foreground/80"
+                  }`}
+                />
+                {label}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      <div className="bg-card rounded-xl border border-border min-h-[400px]">
+      {/* Conteúdo da Tab */}
+      <div className="bg-card rounded-2xl border border-border/60 shadow-xs min-h-[400px]">
         {activeTab === "overview" && (
           <PatientOverview
             patient={patient}
