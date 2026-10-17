@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -6,6 +6,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -34,9 +36,23 @@ export class AuthController {
     return { user: result.user };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(
+    @CurrentUser() user: { userId: string; clinicId: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(user.userId);
+
     res.clearCookie('crm_auth_token', COOKIE_OPTIONS);
+
+    return { success: true };
+  }
+
+  @Post('clear-session')
+  async clearSession(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('crm_auth_token', COOKIE_OPTIONS);
+
     return { success: true };
   }
 

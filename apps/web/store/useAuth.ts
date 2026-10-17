@@ -13,19 +13,30 @@ interface AuthState {
   user: User | null;
   setUser: (user: User) => void;
   logout: () => void;
+  clearLocalSession: () => void;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+
       setUser: (user) => {
         set({ user });
       },
+
       logout: async () => {
         try {
-          await fetch("/api/auth/logout", { method: "POST" });
-        } catch (e) {}
+          await fetch("/api/auth/logout", {
+            method: "POST",
+          });
+        } catch {}
+
+        set({ user: null });
+        window.location.href = "/login";
+      },
+
+      clearLocalSession: () => {
         set({ user: null });
         window.location.href = "/login";
       },
@@ -33,6 +44,6 @@ export const useAuth = create<AuthState>()(
     {
       name: "auth-storage",
       partialize: (state) => ({ user: state.user }),
-    }
-  )
+    },
+  ),
 );

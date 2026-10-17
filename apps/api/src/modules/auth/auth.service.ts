@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -8,20 +12,31 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User } from '@prisma/client';
 import { randomBytes, createHash } from 'crypto';
+import { Resend } from 'resend';
 
 @Injectable()
 export class AuthService {
+  private readonly resend: Resend;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) {}
+  ) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY não está definido.');
+    }
+
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+  }
 
   async validateUser(
     email: string,
     pass: string,
   ): Promise<Omit<User, 'password'> | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (user && (await bcrypt.compare(pass, user.password))) {
@@ -56,7 +71,26 @@ export class AuthService {
     };
   }
 
+  async logout(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        tokenVersion: { increment: 1 },
+      },
+    });
+  }
+
   async register(registerDto: RegisterDto) {
+    const email = registerDto.email.trim().toLowerCase();
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Este e-mail já está cadastrado.');
+    }
+
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     return this.prisma.$transaction(async (tx) => {
@@ -69,7 +103,7 @@ export class AuthService {
 
       const user = await tx.user.create({
         data: {
-          email: registerDto.email,
+          email,
           password: hashedPassword,
           name: registerDto.name,
           clinicId: clinic.id,
@@ -83,8 +117,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     const message =
@@ -115,12 +151,74 @@ export class AuthService {
       },
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
 
-      console.log(
-        `[PASSWORD RESET] ${frontendUrl}/reset-password?token=${token}`,
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+
+    const from = process.env.PASSWORD_RESET_FROM ?? 'onboarding@resend.dev';
+
+    const { error } = await this.resend.emails.send({
+      from,
+      to: ['gabrielhssponchiado@gmail.com'],
+      subject: 'Redefinição de senha - CRM Clínica',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Redefinição de senha</h2>
+
+          <p>Olá, ${user.name}.</p>
+
+          <p>
+            Recebemos uma solicitação para redefinir sua senha.
+          </p>
+
+          <p>
+            Clique no botão abaixo para criar uma nova senha:
+          </p>
+
+          <p>
+            <a
+              href="${resetUrl}"
+              style="
+                display: inline-block;
+                padding: 12px 20px;
+                background-color: #e11d48;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 6px;
+              "
+            >
+              Redefinir minha senha
+            </a>
+          </p>
+
+          <p>
+            Este link expira em 1 hora.
+          </p>
+
+          <p>
+            Se você não solicitou a redefinição, pode ignorar este e-mail.
+          </p>
+
+          <p>
+            Atenciosamente,<br />
+            CRM Clínica
+          </p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error(
+        '[PASSWORD RESET] Erro ao enviar e-mail:',
+        JSON.stringify(error, null, 2),
       );
+
+      throw new Error('Não foi possível enviar o e-mail de recuperação.');
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[PASSWORD RESET] Enviado para: ${user.email}`);
+      console.log(`[PASSWORD RESET] Link: ${resetUrl}`);
     }
 
     return { message };
