@@ -2,11 +2,12 @@
 
 import {
   Activity,
+  ArrowRight,
   Calendar,
   Clock,
   DollarSign,
   FileText,
-  Image,
+  Image as ImageIcon,
   Plus,
   Sparkles,
 } from 'lucide-react';
@@ -19,33 +20,27 @@ const STATUS_CONFIG: Record<
 > = {
   COMPLETED: {
     label: 'Finalizado',
-    className:
-      'bg-green-100 text-green-700 border-green-200',
+    className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   },
   CANCELED: {
     label: 'Cancelado',
-    className:
-      'bg-red-100 text-red-700 border-red-200',
+    className: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
   },
   CONFIRMED: {
     label: 'Confirmado',
-    className:
-      'bg-blue-100 text-blue-700 border-blue-200',
+    className: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   },
   SCHEDULED: {
     label: 'Agendado',
-    className:
-      'bg-orange-100 text-orange-700 border-orange-200',
+    className: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
   },
   IN_PROGRESS: {
     label: 'Em andamento',
-    className:
-      'bg-purple-100 text-purple-700 border-purple-200',
+    className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   },
   NO_SHOW: {
     label: 'Não compareceu',
-    className:
-      'bg-gray-100 text-gray-600 border-gray-200',
+    className: 'bg-slate-500/10 text-slate-600 border-slate-500/20',
   },
 };
 
@@ -71,44 +66,44 @@ export function PatientOverview({
     patient.quotes
       ?.filter((q: any) => q.status === 'APPROVED')
       .reduce(
-        (acc: number, curr: any) =>
-          acc + Number(curr.totalValue),
+        (acc: number, curr: any) => acc + Number(curr.totalValue),
         0,
       ) || 0;
 
   return (
     <div className="p-6 space-y-6">
+      {/* Título da Seção */}
       <div>
-        <h3 className="text-base font-semibold text-foreground">
+        <h3 className="text-lg font-bold tracking-tight text-foreground">
           Visão Geral
         </h3>
-
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Resumo das atividades e informações importantes.
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Resumo das atividades e informações importantes do cliente.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 border rounded-xl bg-background flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-primary mb-3">
-              <Clock className="w-4 h-4" />
-
-              <h4 className="font-semibold text-sm text-foreground">
+      {/* Grid de Cards Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: Último / Próximo Agendamento */}
+        <div className="p-5 border border-border/60 rounded-2xl bg-card shadow-xs flex flex-col justify-between hover:border-border transition-colors group">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Último / Próximo
-              </h4>
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
 
             {patient.appointments?.length > 0 ? (
-              <div>
-                <p className="font-medium text-sm text-foreground">
-                  {patient.appointments[0].procedure?.name ||
-                    'Consulta'}
+              <div className="space-y-2 pt-1">
+                <p className="font-semibold text-base text-foreground capitalize">
+                  {patient.appointments[0].procedure?.name || 'Consulta'}
                 </p>
 
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground/70" />
                   {new Date(
                     patient.appointments[0].scheduledAt,
                   ).toLocaleDateString('pt-BR')}{' '}
@@ -121,21 +116,20 @@ export function PatientOverview({
                   })}
                 </p>
 
-                <span
-                  className={`inline-block mt-3 text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border ${
-                    STATUS_CONFIG[
-                      patient.appointments[0].status
-                    ]?.className || ''
-                  }`}
-                >
-                  {STATUS_CONFIG[
-                    patient.appointments[0].status
-                  ]?.label ||
-                    patient.appointments[0].status}
-                </span>
+                <div className="pt-1">
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                      STATUS_CONFIG[patient.appointments[0].status]?.className || ''
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    {STATUS_CONFIG[patient.appointments[0].status]?.label ||
+                      patient.appointments[0].status}
+                  </span>
+                </div>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground pt-2">
                 Nenhum agendamento registrado.
               </p>
             )}
@@ -144,122 +138,135 @@ export function PatientOverview({
           <Button
             variant="ghost"
             size="sm"
-            className="mt-4 justify-start text-xs text-primary hover:text-primary/80 px-0"
+            className="mt-5 justify-start text-xs font-semibold text-primary hover:text-primary hover:bg-primary/5 px-2 -ml-2 w-fit gap-1 group/btn cursor-pointer"
             onClick={() => onTabChange('appointments')}
           >
-            Ver agendamentos →
+            Ver agendamentos
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
           </Button>
         </div>
 
-        <div className="p-5 border rounded-xl bg-background flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-primary mb-3">
-              <Sparkles className="w-4 h-4" />
-
-              <h4 className="font-semibold text-sm text-foreground">
+        {/* Card 2: Procedimentos */}
+        <div className="p-5 border border-border/60 rounded-2xl bg-card shadow-xs flex flex-col justify-between hover:border-border transition-colors group">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Procedimentos
-              </h4>
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Sparkles className="w-4 h-4" />
+              </div>
             </div>
 
-            <div className="flex items-baseline gap-2 mt-4">
-              <span className="text-4xl font-bold text-foreground">
-                {patient.procedures?.length || 0}
-              </span>
+            <div className="pt-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-extrabold text-foreground tracking-tight">
+                  {patient.procedures?.length || 0}
+                </span>
+                <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                  Sessões
+                </span>
+              </div>
 
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                Sessões
-              </span>
+              {patient.procedures?.length > 0 ? (
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1 font-medium">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground/70" />
+                  Último em{' '}
+                  {new Date(
+                    patient.procedures[0].performedAt,
+                  ).toLocaleDateString('pt-BR')}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Nenhum procedimento realizado ainda.
+                </p>
+              )}
             </div>
-
-            {patient.procedures?.length > 0 && (
-              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-
-                Último em{' '}
-                {new Date(
-                  patient.procedures[0].performedAt,
-                ).toLocaleDateString('pt-BR')}
-              </p>
-            )}
           </div>
 
           <Button
             variant="ghost"
             size="sm"
-            className="mt-4 justify-start text-xs text-primary hover:text-primary/80 px-0"
+            className="mt-5 justify-start text-xs font-semibold text-primary hover:text-primary hover:bg-primary/5 px-2 -ml-2 w-fit gap-1 group/btn cursor-pointer"
             onClick={() => onTabChange('procedures')}
           >
-            Ver histórico →
+            Ver histórico
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
           </Button>
         </div>
 
-        <div className="p-5 border rounded-xl bg-background flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-primary mb-3">
-              <DollarSign className="w-4 h-4" />
-
-              <h4 className="font-semibold text-sm text-foreground">
+        {/* Card 3: Total Investido */}
+        <div className="p-5 border border-border/60 rounded-2xl bg-card shadow-xs flex flex-col justify-between hover:border-border transition-colors group">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Total Investido
-              </h4>
+              </span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <DollarSign className="w-4 h-4" />
+              </div>
             </div>
 
-            <p className="font-bold text-3xl text-foreground mt-4">
-              R${' '}
-              {approvedQuotesTotal.toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-              })}
-            </p>
-
-            <p className="text-xs text-muted-foreground mt-1">
-              Orçamentos aprovados
-            </p>
+            <div className="pt-1">
+              <p className="text-3xl font-extrabold text-foreground tracking-tight">
+                R${' '}
+                {approvedQuotesTotal.toLocaleString('pt-BR', {
+                  minimumFractionDigits: 2,
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                Orçamentos aprovados
+              </p>
+            </div>
           </div>
 
           <Button
             variant="ghost"
             size="sm"
-            className="mt-4 justify-start text-xs text-primary hover:text-primary/80 px-0"
+            className="mt-5 justify-start text-xs font-semibold text-primary hover:text-primary hover:bg-primary/5 px-2 -ml-2 w-fit gap-1 group/btn cursor-pointer"
             onClick={() => onTabChange('quotes')}
           >
-            Ver orçamentos →
+            Ver orçamentos
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
           </Button>
         </div>
       </div>
 
-      <div className="pt-5 border-t border-border">
-        <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+      {/* Seção: Ações Rápidas */}
+      <div className="pt-6 border-t border-border/60 space-y-3">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Activity className="w-4 h-4 text-primary" />
           Ações Rápidas
         </h4>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2.5">
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 shadow-2xs hover:bg-muted/80 cursor-pointer text-xs font-medium"
             onClick={() => onTabChange('anamnesis')}
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-3.5 h-3.5 text-muted-foreground" />
             Atualizar Anamnese
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 shadow-2xs hover:bg-muted/80 cursor-pointer text-xs font-medium"
             onClick={onNewAppointment}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5 text-muted-foreground" />
             Novo Agendamento
           </Button>
 
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 shadow-2xs hover:bg-muted/80 cursor-pointer text-xs font-medium"
             onClick={() => onTabChange('photos')}
           >
-            <Image className="w-4 h-4" />
+            <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
             Adicionar Fotos
           </Button>
         </div>
