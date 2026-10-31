@@ -14,12 +14,12 @@ export function FieldError({ error, className, ...props }: FieldErrorProps) {
   return (
     <p
       className={cn(
-        'text-xs font-medium text-destructive mt-1 flex items-center gap-1.5 animate-in fade-in-50 slide-in-from-top-1 duration-150',
+        'mt-1.5 flex items-center gap-1.5 text-xs font-medium text-destructive animate-in fade-in-50 slide-in-from-top-1 duration-150',
         className
       )}
       {...props}
     >
-      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+      <AlertCircle className="size-3.5 shrink-0" />
       <span>{error}</span>
     </p>
   );
@@ -43,17 +43,20 @@ export function FormField({
   ...props
 }: FormFieldProps) {
   return (
-    <div className={cn('space-y-1.5 flex flex-col', className)} {...props}>
+    <div className={cn('flex flex-col gap-1.5', className)} {...props}>
       {label && (
-        <label className="text-xs font-semibold text-foreground/80 flex items-center justify-between">
+        <label className="flex items-center gap-1 text-sm font-medium text-foreground">
           <span>
-            {label} {required && <span className="text-destructive">*</span>}
+            {label}
+            {required && <span className="ml-0.5 text-destructive">*</span>}
           </span>
         </label>
       )}
       {children}
       {description && !error && (
-        <p className="text-[11px] text-muted-foreground leading-tight">{description}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       )}
       <FieldError error={error} />
     </div>
